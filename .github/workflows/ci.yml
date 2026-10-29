@@ -1,0 +1,48 @@
+name: Quality Gate & CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-gate:
+    name: TypeScript, Frontend, Backend & Database Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: 1. TypeScript Static Type Check
+        run: npm run typecheck
+
+      - name: 2. Frontend Lint Check
+        run: npm run lint
+
+      - name: 3. Backend & Engine Unit Tests
+        run: npm run test
+
+      - name: 4. Frontend Production Build Validation
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://mock-ci.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: mock-ci-anon-key-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: mock-ci-service-role-key-placeholder
+
+      - name: 5. Database Schema & RLS Policy Validation
+        run: |
+          echo "Verifying database/schema.sql existence and security..."
+          test -f database/schema.sql || (echo "Error: database/schema.sql missing" && exit 1)
+          grep -iq "ENABLE ROW LEVEL SECURITY" database/schema.sql || (echo "Error: Row Level Security policies missing" && exit 1)
+          echo "Database schema integrity passed."

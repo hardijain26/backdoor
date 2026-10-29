@@ -1,4 +1,4 @@
-# Three Doors (backdoorv.1): Comprehensive Product-Centric Build Instruction & Operational Runbook
+# Backdoor V.1: Comprehensive Product-Centric Build Instruction & Operational Runbook
 
 **Document Version:** backdoorv.1 Master Production Runbook  
 **Target Platform:** Next.js 15 (App Router, React 19, TypeScript), PostgreSQL 16 (Supabase), Google Workspace APIs, Groq Whisper API  
