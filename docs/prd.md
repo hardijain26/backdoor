@@ -19,25 +19,37 @@
 *   **Pathway 2 (The Gatekeeper):** Technical Recruiter or Talent Partner evaluating specific headcount criteria.
 *   **Pathway 3 (The Ally / Referral):** Peer PM, Tech Lead, or Ex-Employee who can provide insider insights and champion an internal employee referral.
 
-### 1.2 Target User & Persona
-*   **Hardi Jain:** Chartered Accountant background with 3 years of hands-on PM experience at PayU and several deployed AI-native side projects (Pantry Vault AI, Med-Voice).
-*   **Target Roles:** AI-Native Product Manager, Growth Product Manager, UX/Technical Product Manager.
-*   **Geographies:** India, United States, United Kingdom, European Union, and Global Remote.
-*   **Negative Constraints:** Zero companies in FinTech, Payments, or Neo-banking (enforced at ingestion and evaluation).
+### 1.2 Universal Candidate Model & Case Study Persona
+
+> [!IMPORTANT]
+> **Universal Architecture:** Backdoor is architected from the ground up as a **universal career acceleration and transition engine for all types of professionals** (Software Engineers $\to$ Tech PM, Management Consultants $\to$ Strategy/Ops, Customer Operations $\to$ UX PM, Marketing $\to$ Growth, Lawyers $\to$ Policy/Product, Finance $\to$ FinTech/AI PM). 
+> 
+> In Release 1, Hardi Jain's profile (Chartered Accountant $\to$ AI/Growth PM) is utilized as the primary reference showcase to validate deep cross-disciplinary competency translation.
+
+#### Universal User Profile Capabilities
+*   **Arbitrary Baseline Professions:** Users can onboard from *any* professional background (`baseline_profession`), defining their historical domain credentials without constraints.
+*   **Dynamic Target Tracks:** Any user can define and switch between multiple custom target role tracks (`tracks`), tailoring skills weights, target titles, seniority floors, and geographic preferences.
+*   **Configurable Industry Exclusions:** Individualized positive and negative industry constraints (e.g., Hardi excludes FinTech and Payments; an engineering candidate might exclude Crypto or Gambling).
+
+#### Reference Case Study Persona (Hardi Jain)
+*   **Candidate Baseline:** Chartered Accountant with 3 years of hands-on PM experience at PayU and deployed AI-native side projects (Pantry Vault AI, Med-Voice).
+*   **Active Target Tracks:** AI-Native Product Manager, Growth Product Manager, UX/Technical Product Manager.
+*   **Target Geographies:** India, United States, United Kingdom, European Union, and Global Remote.
+*   **User Exclusions:** Companies in FinTech, Payments, or Neo-banking (enforced at ingestion and evaluation).
 
 ### 1.3 Core Product Goals (Release 1)
-1. **Unified High-Signal Discovery Feed:** Every PM opening matching Hardi's filters across 35 verified sources reaches one clean feed within 24 hours of posting.
-2. **Automated Zero-Work Resume & Teardown Synthesis:** Any role scored $\ge 70$ gets a tailored CV Google Doc, a zero-cost Drive PDF, a 1-page company teardown, and up to three verified contacts without manual effort.
+1. **Universal High-Signal Discovery Feed:** Every job opening matching the candidate's active filters across 35 verified sources reaches one clean feed within 24 hours of posting.
+2. **Automated Zero-Work Resume & Teardown Synthesis:** Any role scored $\ge 70$ automatically generates a tailored CV Google Doc, a zero-cost Drive PDF, a 1-page company teardown, and up to three verified entry contacts without manual effort.
 3. **Sub-10-Minute Outreach Pipeline:** Total time from discovering a role to a reviewed, scheduled Gmail draft is under 10 minutes.
-4. **Human-in-the-Loop Safety & Zero Spam:** Zero emails leave Gmail without Hardi manually clicking Send in Gmail. Zero logged-in LinkedIn bot scraping or account risks.
-5. **Zero Running Cost:** Operating infrastructure runs strictly on free tiers and public endpoints ($0.00/month) with optional BYOK keys for power features.
+4. **Human-in-the-Loop Safety & Zero Spam:** Zero emails leave Gmail without the candidate manually clicking Send in Gmail. Zero logged-in LinkedIn bot scraping or account risks.
+5. **Zero Running Cost Baseline:** Operating infrastructure runs strictly on free tiers and public endpoints ($0.00/month) with optional BYOK keys for power features.
 6. **Continuous Downstream Data Portability:** All active roles, outreach cadences, contacts, and interview action items automatically mirror to a personal Google Sheet for offline ownership.
 
 ### 1.4 Non-Goals
 *   No auto-apply to ATS web forms (burns recruiter goodwill; contradicts the direct referral thesis).
-*   No automated email sending on Hardi's behalf (human review required).
+*   No automated email sending on the user's behalf (human review required).
 *   No automated LinkedIn connection invites or InMails.
-*   No public signup, teams, or billing in Release 1 UI (schema supports multi-tenancy; UI hides it).
+*   No public billing or team management in Release 1 UI (schema supports multi-tenancy; UI is single-user locked for release 1 validation).
 *   No speculative probability scoring (quantifies factual suitability only).
 
 ---
