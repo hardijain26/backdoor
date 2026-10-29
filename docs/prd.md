@@ -1,7 +1,9 @@
-# Three Doors (backdoorv.1): Comprehensive Functional PRD & System Specification
+# Backdoor (v1.0): Comprehensive Functional PRD & System Specification
 
-**Document Version:** backdoorv.1 (Production Master)  
+**Product Name:** Backdoor  
+**Document Version:** 1.0.0 (Production Master)  
 **Date:** October 29, 2026  
+**Repository:** `backdoor` (`https://github.com/hardijain26/backdoor`)  
 **Author / Sole User (Release 1):** Hardi Jain  
 **Candidate Baseline Profile:** Chartered Accountant with 3 years as Product Manager at PayU; targeting SaaS & AI PM roles in India, US, UK, EU, or Remote; strictly excluding FinTech and Payments companies.  
 **Tech Stack:** Next.js 15 (App Router, TypeScript), Supabase (PostgreSQL 16), Google Workspace API, Groq Whisper API.  
@@ -11,11 +13,11 @@
 
 ## 1. Product Overview, Goals & Non-Goals
 
-### 1.1 Executive Summary
-Three Doors is a specialized career acceleration command center engineered to bypass Applicant Tracking Systems (ATS) by systematically discovering high-signal opportunities early and routing candidates directly to decision makers through three human pathways:
-*   **Door 1 (The Decision Maker):** Founder, Head of Product, VP of Product, or Group PM who feels the operational pain directly.
-*   **Door 2 (The Gatekeeper):** Technical Recruiter or Talent Partner evaluating specific headcount criteria.
-*   **Door 3 (The Ally):** Peer PM, Tech Lead, or Ex-Employee who can champion an internal referral.
+### 1.1 Executive Summary & Core Thesis
+**Backdoor** is an intelligent, high-density career acceleration command center engineered to bypass Applicant Tracking Systems (ATS) by systematically discovering high-signal opportunities early and routing candidates directly into organizations through three high-leverage entry pathways:
+*   **Pathway 1 (The Decision Maker):** Founder, Head of Product, VP of Product, or Group PM who feels the operational pain directly.
+*   **Pathway 2 (The Gatekeeper):** Technical Recruiter or Talent Partner evaluating specific headcount criteria.
+*   **Pathway 3 (The Ally / Referral):** Peer PM, Tech Lead, or Ex-Employee who can provide insider insights and champion an internal employee referral.
 
 ### 1.2 Target User & Persona
 *   **Hardi Jain:** Chartered Accountant background with 3 years of hands-on PM experience at PayU and several deployed AI-native side projects (Pantry Vault AI, Med-Voice).
@@ -24,15 +26,16 @@ Three Doors is a specialized career acceleration command center engineered to by
 *   **Negative Constraints:** Zero companies in FinTech, Payments, or Neo-banking (enforced at ingestion and evaluation).
 
 ### 1.3 Core Product Goals (Release 1)
-1. **Single Unified Feed:** Every PM opening matching Hardi's filters across 35 verified sources reaches one feed within 24 hours of posting.
-2. **Zero-Work Tailoring:** Any role scored $\ge 70$ gets a tailored CV Google Doc and PDF, a company brief, and up to three named contacts without manual work.
-3. **Sub-10-Minute Outreach:** Total time from opening a role to a reviewed, scheduled Gmail draft is under 10 minutes.
-4. **Safety & Zero Spam:** Zero emails leave Gmail without Hardi manually clicking Send in Gmail. Zero logged-in LinkedIn bot scraping.
-5. **Zero Running Cost:** Running costs remain strictly \$0.00/month with no user keys added.
+1. **Unified High-Signal Discovery Feed:** Every PM opening matching Hardi's filters across 35 verified sources reaches one clean feed within 24 hours of posting.
+2. **Automated Zero-Work Resume & Teardown Synthesis:** Any role scored $\ge 70$ gets a tailored CV Google Doc, a zero-cost Drive PDF, a 1-page company teardown, and up to three verified contacts without manual effort.
+3. **Sub-10-Minute Outreach Pipeline:** Total time from discovering a role to a reviewed, scheduled Gmail draft is under 10 minutes.
+4. **Human-in-the-Loop Safety & Zero Spam:** Zero emails leave Gmail without Hardi manually clicking Send in Gmail. Zero logged-in LinkedIn bot scraping or account risks.
+5. **Zero Running Cost:** Operating infrastructure runs strictly on free tiers and public endpoints ($0.00/month) with optional BYOK keys for power features.
+6. **Continuous Downstream Data Portability:** All active roles, outreach cadences, contacts, and interview action items automatically mirror to a personal Google Sheet for offline ownership.
 
 ### 1.4 Non-Goals
-*   No auto-apply to ATS web forms (burns recruiter goodwill; contradicts the referral thesis).
-*   No automated email sending on Hardi's behalf.
+*   No auto-apply to ATS web forms (burns recruiter goodwill; contradicts the direct referral thesis).
+*   No automated email sending on Hardi's behalf (human review required).
 *   No automated LinkedIn connection invites or InMails.
 *   No public signup, teams, or billing in Release 1 UI (schema supports multi-tenancy; UI hides it).
 *   No speculative probability scoring (quantifies factual suitability only).
@@ -60,7 +63,7 @@ Every module requirement and automated background job must strictly follow these
 
 ### Journey 1: Morning Discovery & Triage (Target: $\le 15$ mins)
 1. **04:00 AM IST:** Automated cron runs Module 2 across 35 sources, normalizes, deduplicates, and evaluates all new jobs against Hardi's active tracks.
-2. **08:00 AM IST:** Hardi opens Three Doors on desktop. The **Morning Radar** displays the top 20 new roles scored $\ge 70$.
+2. **08:00 AM IST:** Hardi opens Backdoor on desktop. The **Morning Radar** displays the top 20 new roles scored $\ge 70$.
 3. **Keyboard Triage:** Hardi switches to the **Dense Command Table** (`j`/`k` navigation).
    * Reads match breakdown, tags, and Door chips.
    * Pressing `s` skips uninteresting roles.
@@ -72,7 +75,7 @@ Every module requirement and automated background job must strictly follow these
 2. **Contact Selection:** Reviews Door 1 (Hiring Manager), Door 2 (Recruiter), and Door 3 (Peer).
 3. **Start Outreach:** Hardi clicks **"Start Outreach"**:
    * Module 4 clones the master Google Doc template, injects tailored proof points, and exports a zero-cost PDF to Google Drive.
-   * Module 7 computes the recipient's office timezone and generates a draft in Gmail under `ThreeDoors/Drafts` with a suggested send time (e.g., *"Tue 09:15 London (14:45 IST)"*).
+   * Module 7 computes the recipient's office timezone and generates a draft in Gmail under `Backdoor/Drafts` with a suggested send time (e.g., *"Tue 09:15 London (14:45 IST)"*).
    * Module 7 formats a customized $\le 300$-character LinkedIn connection note.
 
 ### Journey 3: Review, Send & Thread Cadence
@@ -286,7 +289,7 @@ Every module requirement and automated background job must strictly follow these
 
 ---
 
-### M6 people/enrichment: The Three Doors
+### M6 people/enrichment: Contact Discovery (The Three Entry Doors)
 
 #### 1. Scope & Ownership
 *   Identifies Door 1 (Hiring Manager), Door 2 (Recruiter), and Door 3 (Peer/Ex-Employee).
@@ -318,7 +321,7 @@ Every module requirement and automated background job must strictly follow these
 
 #### 1. Scope & Ownership
 *   Calculates suggested send times based on recipient timezone.
-*   Creates drafts under `ThreeDoors/Drafts` via Gmail API (`gmail.compose`).
+*   Creates drafts under `Backdoor/Drafts` via Gmail API (`gmail.compose`).
 *   Watches email threads and automatically halts follow-ups upon incoming reply.
 
 #### 2. Detailed Functional Requirements
