@@ -338,6 +338,16 @@ ALTER TABLE public.cv_builds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.meeting_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.decision_events ENABLE ROW LEVEL SECURITY;
 
+-- Shared Intelligence Tables (Scraped roles, companies, and sources)
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_briefs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.source_runs ENABLE ROW LEVEL SECURITY;
+
+-- User-owned table policies (Tenant isolation)
 CREATE POLICY "user_owns_profile" ON public.profiles FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "user_owns_tracks" ON public.tracks FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "user_owns_proof_points" ON public.proof_points FOR ALL USING (auth.uid() = user_id);
@@ -349,3 +359,12 @@ CREATE POLICY "user_owns_bullets" ON public.resume_bullets FOR ALL USING (auth.u
 CREATE POLICY "user_owns_cv_builds" ON public.cv_builds FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "user_owns_meeting_notes" ON public.meeting_notes FOR ALL USING (auth.uid() = user_id);
 CREATE POLICY "user_owns_events" ON public.decision_events FOR ALL USING (auth.uid() = user_id);
+
+-- Shared intelligence policies (Read-only for authenticated users; writes restricted to service_role)
+CREATE POLICY "allow_authenticated_read_companies" ON public.companies FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_company_briefs" ON public.company_briefs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_complaints" ON public.complaints FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_jobs" ON public.jobs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_job_sources" ON public.job_sources FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_sources" ON public.sources FOR SELECT TO authenticated USING (true);
+CREATE POLICY "allow_authenticated_read_source_runs" ON public.source_runs FOR SELECT TO authenticated USING (true);
