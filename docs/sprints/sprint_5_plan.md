@@ -15,12 +15,12 @@
 
 | Task ID | Feature Title | Backend Deliverables | Frontend Deliverables | Status | Owner |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `S5-T01` | 35-Source Fleet Health & Observability Dashboard (`/health`) | Telemetry collector from `sources` & `source_runs`, manual test runner API | 35-source matrix, status pills, 7-day sparklines, raw error traces, Radar banner | `PLANNED` | Fullstack Lead |
-| `S5-T02` | Encrypted Settings Workspace & BYOK Key Vault (`/settings`) | AES-256 / pgcrypto secrets vault, negative filter regex engine, OAuth refresher | Tabbed settings UI, source toggles (1–35), masked BYOK vault, OAuth status pill | `PLANNED` | Fullstack Lead |
-| `S5-T03` | Chrome Extension Job Clipper (`extension/clipper.js`) | Authenticated clipper ingest endpoint (`/api/ingest/universal`), instant scoring | Content script DOM extractors (LinkedIn, Greenhouse, Lever, etc.), 1-click popup UI | `PLANNED` | Extension Lead |
-| `S5-T04` | Asynchronous Google Sheet Mirroring Worker & Audit Telemetry | Batch sync worker with exponential backoff, conversion funnel telemetry calculator | Telemetry conversion chart on `/health`, manual "Sync Now" CTA button | `PLANNED` | Fullstack Lead |
-| `S5-T05` | Mobile Responsive Adaptation ($380\text{px}$ Breakpoint Support) | Optimized mobile payloads, lightweight card projections for low bandwidth | Mobile drawer navigation, stacked 1-col Bento cards, full-width drawer, 0 h-scroll | `PLANNED` | Frontend Lead |
-| `S5-T06` | Full Compliance Audit, Playwright E2E Suite & Release Readiness | Static security AST checks (0 send calls, RLS audit, immutable log checks) | AST color scan (0 forbidden hues), full-journey automated Playwright E2E suite | `PLANNED` | QA / Sentinel |
+| `S5-T01` | 35-Source Fleet Health & Observability Dashboard (`/health`) | Telemetry collector from `sources` & `source_runs`, manual test runner API | 35-source matrix, status pills, 7-day sparklines, raw error traces, Radar banner | `COMPLETED` | Fullstack Lead |
+| `S5-T02` | Encrypted Settings Workspace & BYOK Key Vault (`/settings`) | AES-256 / pgcrypto secrets vault, negative filter regex engine, OAuth refresher | Tabbed settings UI, source toggles (1–35), masked BYOK vault, OAuth status pill | `COMPLETED` | Fullstack Lead |
+| `S5-T03` | Chrome Extension Job Clipper (`extension/clipper.js`) | Authenticated clipper ingest endpoint (`/api/ingest/universal`), instant scoring | Content script DOM extractors (LinkedIn, Greenhouse, Lever, etc.), 1-click popup UI | `COMPLETED` | Extension Lead |
+| `S5-T04` | Asynchronous Google Sheet Mirroring Worker & Audit Telemetry | Batch sync worker with exponential backoff, conversion funnel telemetry calculator | Telemetry conversion chart on `/health`, manual "Sync Now" CTA button | `COMPLETED` | Fullstack Lead |
+| `S5-T05` | Mobile Responsive Adaptation ($380\text{px}$ Breakpoint Support) | Optimized mobile payloads, lightweight card projections for low bandwidth | Mobile drawer navigation, stacked 1-col Bento cards, full-width drawer, 0 h-scroll | `COMPLETED` | Frontend Lead |
+| `S5-T06` | Full Compliance Audit, Playwright E2E Suite & Release Readiness | Static security AST checks (0 send calls, RLS audit, immutable log checks) | AST color scan (0 forbidden hues), full-journey automated Playwright E2E suite | `COMPLETED` | QA / Sentinel |
 
 ---
 

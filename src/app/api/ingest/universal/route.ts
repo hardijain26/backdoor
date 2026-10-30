@@ -84,6 +84,21 @@ export async function POST(req: NextRequest) {
         extracted.description = `${extracted.title} at ${extracted.company}. Lead product strategy, roadmapping, cross-functional leadership, analytics, and product execution. ${extracted.description}`;
       }
       metadata = extracted;
+    } else if (mode === 'clipper') {
+      const { title, company, location, salary, description, applyUrl, source } = body;
+      if (!title || !company) {
+        return NextResponse.json({ error: 'Company and Title are required for clipper mode.' }, { status: 400 });
+      }
+      const desc = description?.trim() || `${title} at ${company}. Drive product strategy, roadmapping, cross-functional leadership, user research, and execution.`;
+      metadata = {
+        title: title.trim(),
+        company: company.trim(),
+        location: location?.trim() || 'Remote',
+        salary: salary?.trim() || '$180k - $240k + Equity',
+        description: desc,
+        applyUrl: applyUrl?.trim() || 'https://backdoor.app',
+        source: source || 'chrome_clipper'
+      };
     } else if (mode === 'manual') {
       if (!manual?.company || !manual?.title) {
         return NextResponse.json({ error: 'Company and Title are required for manual mode.' }, { status: 400 });
@@ -150,9 +165,11 @@ export async function POST(req: NextRequest) {
       success: true,
       isDuplicate,
       dedupMatchKey,
+      fitScore,
+      jobUrl: `/discover/${createdJob.id}`,
       message: isDuplicate
         ? 'Role already exists in database: Appending new link to job sources.'
-        : 'New Canonical Role Identified.',
+        : `Job Saved (${fitScore}% FIT)`,
       job: createdJob
     });
   } catch (err: unknown) {

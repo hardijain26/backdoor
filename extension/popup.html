@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Backdoor Clipper</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #080B11;
+      color: #F8FAFC;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background-color: #2563EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      font-size: 14px;
+    }
+    .title-area h1 {
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+    }
+    .title-area p {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    .content {
+      padding: 14px 0;
+    }
+    .field-label {
+      font-size: 10px;
+      font-family: monospace;
+      text-transform: uppercase;
+      color: #64748B;
+      margin-bottom: 4px;
+    }
+    .detected-card {
+      background-color: #0F1523;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .job-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #F8FAFC;
+      margin-bottom: 4px;
+    }
+    .job-company {
+      font-size: 12px;
+      color: #38BDF8;
+      font-weight: 500;
+    }
+    .job-location {
+      font-size: 11px;
+      color: #94A3B8;
+      margin-top: 4px;
+    }
+    .btn-clip {
+      width: 100%;
+      background-color: #2563EB;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.15s ease;
+    }
+    .btn-clip:hover {
+      background-color: #1D4ED8;
+    }
+    .btn-clip:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status-area {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: monospace;
+      display: none;
+    }
+    .status-success {
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10B981;
+      display: block;
+    }
+    .status-error {
+      background-color: rgba(225, 29, 72, 0.15);
+      border: 1px solid rgba(225, 29, 72, 0.3);
+      color: #E11D48;
+      display: block;
+    }
+    .footer-link {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 11px;
+    }
+    .footer-link a {
+      color: #94A3B8;
+      text-decoration: none;
+    }
+    .footer-link a:hover {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand-icon">B</div>
+    <div class="title-area">
+      <h1>Backdoor Job Clipper</h1>
+      <p>Instant scoring & pipeline ingest</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="field-label">Detected Opportunity</div>
+    <div class="detected-card">
+      <div id="job-title" class="job-title">Detecting active tab...</div>
+      <div id="job-company" class="job-company">Please open a job posting</div>
+      <div id="job-location" class="job-location"></div>
+    </div>
+
+    <button id="btn-clip" class="btn-clip" disabled>
+      <span>⚡ Add to Backdoor</span>
+    </button>
+
+    <div id="status-box" class="status-area"></div>
+  </div>
+
+  <div class="footer-link">
+    <a href="http://localhost:3001/radar" target="_blank">Open Morning Radar ↗</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
