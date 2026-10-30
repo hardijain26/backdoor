@@ -16,11 +16,11 @@
 | Task ID | Feature Title | Backend Deliverables | Frontend Deliverables | Status | Owner |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `S4-T01` | Tier 3 LLM Fit Evaluation & Proof-Point Synthesis | Prompt pipeline grounding on candidate proof points, caching in `evaluations` | Tab 2 "Match Breakdown" Tier 3 synthesis card, positioning angle pill, gap chips | `STAGED` (PR #9) | Fullstack Lead |
-| `S4-T02` | Company Review Auditor (Reddit, App Store, Play Store) | Polite scrapers for Reddit/App Store/Play Store, sentiment analysis, pain point clustering | Tab 3 "Teardown 1-Pager" sentiment gauges, customer pain point list, direct quotes | `DEFERRED` (PM Scope Cut) | Fullstack Lead |
-| `S4-T03` | Executive Product Teardown 1-Pager & Google Docs Export | Teardown generator (Quick Win, Growth Loop, Monetization), Google Docs API export | Live 3-proposal preview cards, "Open Teardown in Google Docs" primary CTA button | `PLANNED` | Fullstack Lead |
-| `S4-T04` | Google Meet Audio Capture & Groq Whisper Pipeline | Multipart audio chunk receiver, Groq Whisper API integration, LLM notes extractor | Chrome Extension `audio-capture.js` recording Meet tab audio in 10-min WAV chunks | `IN_PROGRESS` | Extension Lead |
-| `S4-T05` | Interview Notes & Debrief Workspace (`/interviews`) | Interview rounds API, action items CRUD, persistence to `meetings` & `decision_events` | Timeline view of interviews, transcript accordion, interactive action items checklist | `IN_PROGRESS` | Fullstack Lead |
-| `S4-T06` | In-Drawer AI Copilot Panel & Contextual Role Sparring | Streaming LLM endpoint (`/api/copilot/chat`) with auto-injected JD, teardown & proof points | Collapsible drawer chat panel, streaming markdown renderer, quick-prompt action chips | `DEFERRED` (PM Scope Cut) | Fullstack Lead |
+| `S4-T02` | Company Review Auditor (Reddit, App Store, Play Store) | Polite scrapers for Reddit/App Store/Play Store, sentiment analysis, pain point clustering | Tab 3 "Teardown 1-Pager" sentiment gauges, customer pain point list, direct quotes | `DEFERRED` (PM Scope Directive) | Fullstack Lead |
+| `S4-T03` | Executive Product Teardown 1-Pager & Google Docs Export | Teardown generator (Quick Win, Growth Loop, Monetization), Google Docs API export | Live 3-proposal preview cards, "Open Teardown in Google Docs" primary CTA button | `DEFERRED` (Requirements Refinement Needed) | Fullstack Lead |
+| `S4-T04` | Google Meet Audio Capture & Groq Whisper Pipeline | Multipart audio chunk receiver, Groq Whisper API integration, LLM notes extractor | Chrome Extension `audio-capture.js` recording Meet tab audio in 10-min WAV chunks | `STAGED` (PR #10) | Extension Lead |
+| `S4-T05` | Interview Notes & Debrief Workspace (`/interviews`) | Interview rounds API, action items CRUD, persistence to `meetings` & `decision_events` | Timeline view of interviews, transcript accordion, interactive action items checklist | `STAGED` (PR #10) | Fullstack Lead |
+| `S4-T06` | In-Drawer AI Copilot Panel & Contextual Role Sparring | Streaming LLM endpoint (`/api/copilot/chat`) with auto-injected JD, teardown & proof points | Collapsible drawer chat panel, streaming markdown renderer, quick-prompt action chips | `DEFERRED` (PM Scope Directive) | Fullstack Lead |
 
 ---
 
