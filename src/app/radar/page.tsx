@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useTableKeyboardNav } from '@/components/useTableKeyboardNav';
 import { ThreeDoorsChips } from '@/components/ThreeDoorsChips';
+import { DossierDrawer } from '@/components/dossier/DossierDrawer';
 
 export interface RadarJobItem {
   id: string;
@@ -185,6 +186,26 @@ export default function MorningRadarPage() {
     searchInputRef
   });
 
+  // In-Drawer Rapid Candidate Cycling (Runbook §4.3)
+  const selectedJobIndex = visibleJobs.findIndex((j) => j.id === selectedDrawerId);
+  const selectedJob = selectedJobIndex !== -1 ? visibleJobs[selectedJobIndex] : null;
+
+  const handleNavigatePrev = () => {
+    if (selectedJobIndex > 0) {
+      const prevJob = visibleJobs[selectedJobIndex - 1];
+      setSelectedDrawerId(prevJob.id);
+      setSelectedIndex(selectedJobIndex - 1);
+    }
+  };
+
+  const handleNavigateNext = () => {
+    if (selectedJobIndex < visibleJobs.length - 1) {
+      const nextJob = visibleJobs[selectedJobIndex + 1];
+      setSelectedDrawerId(nextJob.id);
+      setSelectedIndex(selectedJobIndex + 1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC] p-6 lg:p-8 font-sans">
       {/* Header Bar */}
@@ -273,7 +294,10 @@ export default function MorningRadarPage() {
             return (
               <div
                 key={job.id}
-                onClick={() => setSelectedIndex(idx)}
+                onClick={() => {
+                  setSelectedIndex(idx);
+                  setSelectedDrawerId(job.id);
+                }}
                 className={`bg-[#0F1523] border rounded-lg p-5 flex flex-col justify-between aspect-square transition-all duration-150 cursor-pointer ${
                   isSelected
                     ? 'ring-2 ring-blue-500 border-transparent shadow-lg shadow-blue-500/10'
@@ -311,6 +335,16 @@ export default function MorningRadarPage() {
                   <div className="flex items-center justify-between text-xs text-[#94A3B8] pt-1">
                     <span className="font-mono text-[11px]">{job.postedHoursAgo}h ago</span>
                     <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIndex(idx);
+                          setSelectedDrawerId(job.id);
+                        }}
+                        className="px-2 py-0.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded font-medium border border-white/10 transition-colors"
+                      >
+                        Dossier &rarr;
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -354,6 +388,7 @@ export default function MorningRadarPage() {
                 <th className="py-2.5 px-3">Three Doors</th>
                 <th className="py-2.5 px-3">Source</th>
                 <th className="py-2.5 px-3 text-right">Age</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -362,7 +397,10 @@ export default function MorningRadarPage() {
                 return (
                   <tr
                     key={job.id}
-                    onClick={() => setSelectedIndex(idx)}
+                    onClick={() => {
+                      setSelectedIndex(idx);
+                      setSelectedDrawerId(job.id);
+                    }}
                     className={`transition-colors cursor-pointer ${
                       isSelected
                         ? 'bg-blue-600/15 border-l-2 border-l-blue-500'
@@ -401,6 +439,18 @@ export default function MorningRadarPage() {
                     <td className="py-2 px-3 text-xs font-mono text-right text-slate-400">
                       {job.postedHoursAgo}h
                     </td>
+                    <td className="py-2 px-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedIndex(idx);
+                          setSelectedDrawerId(job.id);
+                        }}
+                        className="px-2 py-0.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded font-medium border border-white/10 transition-colors"
+                      >
+                        Dossier &rarr;
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -420,6 +470,19 @@ export default function MorningRadarPage() {
           </button>
         </div>
       )}
+
+      {/* 640px Slide-Out Dossier Drawer (Runbook §4.3) */}
+      <DossierDrawer
+        job={selectedJob}
+        isOpen={Boolean(selectedDrawerId && selectedJob)}
+        onClose={() => setSelectedDrawerId(null)}
+        onNavigatePrev={handleNavigatePrev}
+        onNavigateNext={handleNavigateNext}
+        hasPrev={selectedJobIndex > 0}
+        hasNext={selectedJobIndex < visibleJobs.length - 1}
+        currentIndex={selectedJobIndex >= 0 ? selectedJobIndex : 0}
+        totalJobs={visibleJobs.length}
+      />
     </div>
   );
 }
