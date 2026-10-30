@@ -1,29 +1,56 @@
--- Enable cryptographic and UUID extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Backdoor (backdoorv.1) Ground-Zero Clean Bootstrap Schema
+-- Target: PostgreSQL 16 (Supabase)
+BEGIN;
+
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
--- ENUM TYPES
+-- 1. CUSTOM ENUM TYPES (5 Custom Enums)
 -- ============================================================================
-CREATE TYPE posting_status_enum AS ENUM ('OPEN', 'STALE', 'CLOSED');
+CREATE TYPE posting_status_enum AS ENUM (
+    'OPEN', 
+    'STALE', 
+    'CLOSED'
+);
 
 CREATE TYPE application_stage_enum AS ENUM (
-    'DISCOVERED', 'CHOSEN', 'OUTREACH_STARTED', 
-    'IN_CONVERSATION', 'INTERVIEW_SCHEDULED', 
-    'OFFER_RECEIVED', 'ARCHIVED', 'SKIPPED', 'NOT_A_FIT'
+    'DISCOVERED', 
+    'CHOSEN', 
+    'OUTREACH_STARTED', 
+    'IN_CONVERSATION', 
+    'INTERVIEW_SCHEDULED', 
+    'OFFER_RECEIVED', 
+    'ARCHIVED', 
+    'SKIPPED', 
+    'NOT_A_FIT'
 );
 
-CREATE TYPE outreach_door_enum AS ENUM ('DOOR_1', 'DOOR_2', 'DOOR_3');
+CREATE TYPE outreach_door_enum AS ENUM (
+    'DOOR_1', 
+    'DOOR_2', 
+    'DOOR_3'
+);
 
 CREATE TYPE cadence_step_status_enum AS ENUM (
-    'DRAFT_PENDING', 'DRAFT_CREATED', 'SENT', 
-    'REPLIED', 'BOUNCED', 'CANCELLED', 'SKIPPED'
+    'DRAFT_PENDING', 
+    'DRAFT_CREATED', 
+    'SENT', 
+    'REPLIED', 
+    'BOUNCED', 
+    'CANCELLED', 
+    'SKIPPED'
 );
 
-CREATE TYPE contact_confidence_enum AS ENUM ('VERIFIED', 'INFERRED', 'HYPOTHESIS', 'CURATED');
+CREATE TYPE contact_confidence_enum AS ENUM (
+    'VERIFIED', 
+    'INFERRED', 
+    'HYPOTHESIS', 
+    'CURATED'
+);
 
 -- ============================================================================
--- 1. USER PROFILES & IDENTITY
+-- 2. SECTION 1: PROFILES & IDENTITY (User-Owned)
 -- ============================================================================
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -42,12 +69,12 @@ CREATE TABLE public.profiles (
 );
 
 -- ============================================================================
--- 2. DYNAMIC PERSONA TRACKS
+-- 3. SECTION 2: DYNAMIC PERSONA TRACKS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.tracks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL, -- e.g. 'AI-Native PM', 'Growth PM', 'UX PM'
+    name TEXT NOT NULL,
     target_titles TEXT[] NOT NULL,
     skill_weights JSONB NOT NULL DEFAULT '{}'::jsonb,
     seniority_levels TEXT[] NOT NULL,
@@ -58,15 +85,15 @@ CREATE TABLE public.tracks (
 );
 
 -- ============================================================================
--- 3. STRUCTURED PROOF POINTS & SIDE PROJECTS
+-- 4. SECTION 3: PROOF POINTS & SIDE PROJECTS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.proof_points (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     statement TEXT NOT NULL,
     metric_number NUMERIC NOT NULL,
-    metric_unit TEXT NOT NULL, -- '%', 'USD', 'tickets'
-    metric_direction TEXT NOT NULL, -- 'UP', 'DOWN'
+    metric_unit TEXT NOT NULL,
+    metric_direction TEXT NOT NULL,
     time_frame TEXT NOT NULL,
     employer TEXT NOT NULL,
     evidence_url TEXT,
@@ -78,7 +105,7 @@ CREATE TABLE public.proof_points (
 CREATE TABLE public.side_projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    name TEXT NOT NULL, -- e.g. 'Pantry Vault AI', 'Med-Voice'
+    name TEXT NOT NULL,
     description TEXT NOT NULL,
     live_url TEXT,
     repo_url TEXT,
@@ -87,7 +114,7 @@ CREATE TABLE public.side_projects (
 );
 
 -- ============================================================================
--- 4. COMPANIES & INTELLIGENCE
+-- 5. SECTION 4: GLOBAL COMPANIES & INTELLIGENCE (Canonical / Global)
 -- ============================================================================
 CREATE TABLE public.companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -117,16 +144,16 @@ CREATE TABLE public.company_briefs (
 CREATE TABLE public.complaints (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-    source TEXT NOT NULL, -- 'reddit', 'app_store_ios', 'pasted_excerpt'
+    source TEXT NOT NULL,
     review_date DATE,
     source_url TEXT,
     excerpt TEXT NOT NULL,
-    friction_tag TEXT NOT NULL, -- 'ONBOARDING', 'BILLING', 'BUG', 'FEATURE_GAP', 'SUPPORT'
+    friction_tag TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================================
--- 5. CANONICAL JOBS POOL & INGESTION PROVENANCE
+-- 6. SECTION 5: CANONICAL JOBS POOL & INGESTION (Canonical / Global)
 -- ============================================================================
 CREATE TABLE public.jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -134,13 +161,13 @@ CREATE TABLE public.jobs (
     title TEXT NOT NULL,
     normalized_title TEXT NOT NULL,
     locations TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
-    region TEXT NOT NULL,
-    workplace TEXT NOT NULL, -- 'remote', 'hybrid', 'on-site'
+    region TEXT NOT NULL DEFAULT 'Global Remote',
+    workplace TEXT NOT NULL DEFAULT 'remote',
     seniority TEXT,
     specializations TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
     apply_url TEXT NOT NULL,
     primary_source TEXT NOT NULL,
-    dedup_match_key TEXT UNIQUE NOT NULL, -- normalized company + normalized title
+    dedup_match_key TEXT UNIQUE NOT NULL,
     salary_raw TEXT,
     description_text TEXT NOT NULL,
     posted_at TIMESTAMPTZ,
@@ -150,20 +177,8 @@ CREATE TABLE public.jobs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE public.job_sources (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
-    source TEXT NOT NULL, -- 'greenhouse', 'remotive', 'linkedin_pasted'
-    url TEXT NOT NULL,
-    raw_payload JSONB,
-    confidence contact_confidence_enum NOT NULL DEFAULT 'VERIFIED',
-    first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(job_id, source, url)
-);
-
 CREATE TABLE public.sources (
-    id TEXT PRIMARY KEY, -- 'greenhouse', 'ashby', 'reddit'
+    id TEXT PRIMARY KEY,
     display_name TEXT NOT NULL,
     group_type TEXT NOT NULL,
     is_enabled BOOLEAN NOT NULL DEFAULT true,
@@ -185,8 +200,20 @@ CREATE TABLE public.source_runs (
     error_message TEXT
 );
 
+CREATE TABLE public.job_sources (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
+    source TEXT NOT NULL,
+    url TEXT NOT NULL,
+    raw_payload JSONB,
+    confidence contact_confidence_enum NOT NULL DEFAULT 'VERIFIED',
+    first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(job_id, source, url)
+);
+
 -- ============================================================================
--- 6. CANDIDATE EVALUATIONS & FIT SCORES
+-- 7. SECTION 6: USER-SPECIFIC EVALUATIONS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.evaluations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -208,7 +235,7 @@ CREATE TABLE public.evaluations (
 );
 
 -- ============================================================================
--- 7. THE THREE DOORS CONTACTS
+-- 8. SECTION 7: THE THREE DOORS CONTACTS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -218,7 +245,7 @@ CREATE TABLE public.contacts (
     title TEXT NOT NULL,
     door outreach_door_enum NOT NULL,
     email TEXT,
-    email_status TEXT NOT NULL DEFAULT 'UNVERIFIED', -- 'VERIFIED', 'PROBABLE', 'UNVERIFIED'
+    email_status TEXT NOT NULL DEFAULT 'UNVERIFIED',
     linkedin_url TEXT,
     source_url TEXT NOT NULL,
     confidence contact_confidence_enum NOT NULL DEFAULT 'INFERRED',
@@ -229,7 +256,7 @@ CREATE TABLE public.contacts (
 );
 
 -- ============================================================================
--- 8. CADENCES & GMAIL DRAFT TRACKING (Human Send Only)
+-- 9. SECTION 8: CADENCES & GMAIL DRAFT TRACKING (User-Owned)
 -- ============================================================================
 CREATE TABLE public.cadences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -237,7 +264,7 @@ CREATE TABLE public.cadences (
     evaluation_id UUID NOT NULL REFERENCES public.evaluations(id) ON DELETE CASCADE,
     contact_id UUID NOT NULL REFERENCES public.contacts(id) ON DELETE CASCADE,
     door outreach_door_enum NOT NULL,
-    channel TEXT NOT NULL DEFAULT 'GMAIL', -- 'GMAIL', 'LINKEDIN_NOTE'
+    channel TEXT NOT NULL DEFAULT 'GMAIL',
     step_number INTEGER NOT NULL DEFAULT 1,
     status cadence_step_status_enum NOT NULL DEFAULT 'DRAFT_PENDING',
     suggested_send_at TIMESTAMPTZ NOT NULL,
@@ -253,7 +280,7 @@ CREATE TABLE public.cadences (
 );
 
 -- ============================================================================
--- 9. RESUME BULLETS BANK & BUILDS
+-- 10. SECTION 9: RESUME BULLETS BANK & BUILDS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.resume_bullets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -276,7 +303,7 @@ CREATE TABLE public.cv_builds (
 );
 
 -- ============================================================================
--- 10. INTERVIEW NOTES & ACTION ITEMS
+-- 11. SECTION 10: MEETING NOTES & ACTION ITEMS (User-Owned)
 -- ============================================================================
 CREATE TABLE public.meeting_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -284,7 +311,7 @@ CREATE TABLE public.meeting_notes (
     evaluation_id UUID NOT NULL REFERENCES public.evaluations(id) ON DELETE CASCADE,
     meeting_title TEXT NOT NULL,
     scheduled_start TIMESTAMPTZ NOT NULL,
-    transcription_status TEXT NOT NULL DEFAULT 'COMPLETED', -- 'RECORDING', 'QUEUED', 'COMPLETED', 'FAILED'
+    transcription_status TEXT NOT NULL DEFAULT 'COMPLETED',
     transcript_raw TEXT,
     my_action_items JSONB NOT NULL DEFAULT '[]'::jsonb,
     their_action_items JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -294,24 +321,24 @@ CREATE TABLE public.meeting_notes (
 );
 
 -- ============================================================================
--- 11. IMMUTABLE DECISION EVENTS AUDIT TRAIL
+-- 12. SECTION 11: IMMUTABLE DECISION EVENTS AUDIT TRAIL (User-Owned)
 -- ============================================================================
 CREATE TABLE public.decision_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    actor TEXT NOT NULL, -- e.g. 'hardi', 'cron_0400_runner', 'm7_draft_builder'
-    aggregate_type TEXT NOT NULL, -- 'JOB', 'EVALUATION', 'CADENCE', 'MEETING'
+    actor TEXT NOT NULL,
+    aggregate_type TEXT NOT NULL,
     aggregate_id UUID NOT NULL,
     event_name TEXT NOT NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Security Hardening: Revoke UPDATE and DELETE on audit trail
+-- Security Invariant: Hard Revoke on decision_events
 REVOKE UPDATE, DELETE ON public.decision_events FROM PUBLIC, authenticated, anon;
 
 -- ============================================================================
--- INDEXES FOR PERFORMANCE & DEDUPLICATION
+-- 13. PERFORMANCE & QUERY INDEXES (9 Specific Indexes)
 -- ============================================================================
 CREATE INDEX idx_jobs_company_id ON public.jobs(company_id);
 CREATE INDEX idx_jobs_posting_status ON public.jobs(posting_status);
@@ -324,12 +351,20 @@ CREATE INDEX idx_cadences_suggested_send ON public.cadences(suggested_send_at);
 CREATE INDEX idx_decision_events_aggregate ON public.decision_events(aggregate_type, aggregate_id);
 
 -- ============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- 14. ROW LEVEL SECURITY (RLS) POLICIES (All 18 Tables)
 -- ============================================================================
+-- Enable RLS on all 18 tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.proof_points ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.side_projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.company_briefs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.job_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.source_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.evaluations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cadences ENABLE ROW LEVEL SECURITY;
@@ -338,33 +373,26 @@ ALTER TABLE public.cv_builds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.meeting_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.decision_events ENABLE ROW LEVEL SECURITY;
 
--- Shared Intelligence Tables (Scraped roles, companies, and sources)
-ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.company_briefs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.job_sources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.source_runs ENABLE ROW LEVEL SECURITY;
+-- 11 User-Owned Tables: Multi-Tenant Isolation (Explicitly TO authenticated)
+CREATE POLICY "user_owns_profile" ON public.profiles FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_tracks" ON public.tracks FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_proof_points" ON public.proof_points FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_side_projects" ON public.side_projects FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_evaluations" ON public.evaluations FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_contacts" ON public.contacts FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_cadences" ON public.cadences FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_bullets" ON public.resume_bullets FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_cv_builds" ON public.cv_builds FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_meeting_notes" ON public.meeting_notes FOR ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "user_owns_events" ON public.decision_events FOR ALL TO authenticated USING (auth.uid() = user_id);
 
--- User-owned table policies (Tenant isolation)
-CREATE POLICY "user_owns_profile" ON public.profiles FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_tracks" ON public.tracks FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_proof_points" ON public.proof_points FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_side_projects" ON public.side_projects FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_evaluations" ON public.evaluations FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_contacts" ON public.contacts FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_cadences" ON public.cadences FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_bullets" ON public.resume_bullets FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_cv_builds" ON public.cv_builds FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_meeting_notes" ON public.meeting_notes FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "user_owns_events" ON public.decision_events FOR ALL USING (auth.uid() = user_id);
+-- 7 Global Canonical Tables: Read-Only for Authenticated Users (Explicitly TO authenticated)
+CREATE POLICY "authenticated_read_companies" ON public.companies FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_company_briefs" ON public.company_briefs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_complaints" ON public.complaints FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_jobs" ON public.jobs FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_job_sources" ON public.job_sources FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_sources" ON public.sources FOR SELECT TO authenticated USING (true);
+CREATE POLICY "authenticated_read_source_runs" ON public.source_runs FOR SELECT TO authenticated USING (true);
 
--- Shared intelligence policies (Read-only for authenticated users; writes restricted to service_role)
-CREATE POLICY "allow_authenticated_read_companies" ON public.companies FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_company_briefs" ON public.company_briefs FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_complaints" ON public.complaints FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_jobs" ON public.jobs FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_job_sources" ON public.job_sources FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_sources" ON public.sources FOR SELECT TO authenticated USING (true);
-CREATE POLICY "allow_authenticated_read_source_runs" ON public.source_runs FOR SELECT TO authenticated USING (true);
+COMMIT;
