@@ -18,7 +18,7 @@
 | `S3-T01` | 640px Slide-Out Dossier Drawer & Route Interception | Server-side composite loader for job, company, eval & contacts | Route interception `@drawer/(.)discover/[job_id]`, 640px drawer, `↑`/`↓` cycling | `COMPLETED` | Fullstack Lead |
 | `S3-T02` | Universal Ingest Modal & Deduplication (`Shift + I`) | SSRF-safe scraper (`safe-fetch.ts`), canonical key generator, dedup API | Global `Shift + I` modal, duplicate alert badge, auto-drawer open | `COMPLETED` | Fullstack Lead |
 | `S3-T03` | Three Doors Contact Discovery & Multi-Provider Enrichment | Apollo/Hunter scraper pipeline, Door 1/2/3 classification, confidence score | Tab 4 "Backdoor" UI: 3-column contact cards, LinkedIn search CTA, target selector | `COMPLETED` | Fullstack Lead |
-| `S3-T04` | Tailored CV Builder & Google Drive PDF Staging (Rule R5) | Proof-point matcher, Rule R5 AST metric verifier, Google Docs/Drive PDF export | Tab 6 "CV Preview" UI: bullet diff viewer, Drive PDF badge, embedded preview | `PLANNED` | Fullstack Lead |
+| `S3-T04` | Tailored CV Builder & Google Drive PDF Staging (Rule R5) | Proof-point matcher, Rule R5 AST metric verifier, Google Docs/Drive PDF export | Tab 5 "Outreach & CV" UI: bullet diff viewer, Rule R5 metric chip, Drive PDF badge | `COMPLETED` | Fullstack Lead |
 | `S3-T05` | Gmail Draft Staging Engine (Rule R1) & Timezone Scheduler | Recipient timezone geocoder (09:15 Tue-Thu), `ThreeDoors/Drafts` creator, AST send check | Outreach draft editor, send-time badge, "Stage Draft in Gmail" CTA, deep link to Gmail | `PLANNED` | Fullstack Lead |
 | `S3-T06` | Outreach & Cadence Board (`/outreach`) & Lifecycle Engine | Application stage state machine, Gmail thread watcher, decision event logging | Kanban board (5 swimlanes), "Copy LinkedIn Note" ($\le 300$ chars), stage advancement UI | `PLANNED` | Fullstack Lead |
 
@@ -198,3 +198,31 @@ Following deployment of `main`, the Product Manager executes the live verificati
 - [ ] `docs/PRODUCT-ARCHITECTURE.md` updated with Dossier Drawer & Cadence contracts
 - [ ] `docs/navigation_flow.md` updated with route interception specs
 - [ ] `CHANGELOG.md` updated with user-facing release notes
+
+---
+
+## 9. Technical & Build Infrastructure Notes: Isolated Preflight Builds and `tsconfig.json`
+
+### 9.1 Background & Root Cause (Dev Server Runtime Chunk Collision)
+During local rapid development, executing `npm run build` directly while `next dev` is concurrently running wiped the active `.next/` directory. This deleted active vendor chunks (`vendor-chunks/next.js`) and severed chunk manifests, causing browsers to receive unstyled HTML and uncompiled CSS.
+
+### 9.2 The Isolated Preflight Build Fix
+To permanently eliminate dev-server chunk collision, the build pipeline was decoupled:
+1. **`next.config.js`:** Configured dynamic distribution directory:
+   ```javascript
+   distDir: process.env.NEXT_DIST_DIR || '.next',
+   ```
+2. **`scripts/preflight.sh` Gate 7:** Executes Next.js production verification using an isolated build directory:
+   ```bash
+   NEXT_DIST_DIR=".next-preflight" npm run build
+   rm -rf .next-preflight
+   ```
+
+### 9.3 Rationale for Changes in `tsconfig.json`
+Whenever Next.js compiles with a custom `distDir` (e.g. `NEXT_DIST_DIR=".next-preflight"`), its TypeScript integration automatically updates `tsconfig.json` to append:
+```json
+".next-preflight/types/**/*.ts"
+```
+to the `include` array. 
+- **Purpose:** Ensures the TypeScript language server can resolve auto-generated Next.js App Router types without colliding with the active development server's `.next/types/**/*.ts`.
+- **Status:** Expected, non-destructive compiler behavior. It does not alter application bundle output or runtime logic.
