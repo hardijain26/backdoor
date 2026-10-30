@@ -11,6 +11,7 @@ export function Navbar() {
     { href: '/radar', label: 'Morning Radar', badge: 'Active' },
     { href: '/jobs', label: 'Pipeline' },
     { href: '/outreach', label: 'Outreach Board' },
+    { href: '/interviews', label: 'Interviews' },
     { href: '/dossiers', label: 'Dossiers' },
     { href: '/health', label: 'System Health' }
   ];
@@ -35,7 +36,9 @@ export function Navbar() {
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+              const isActive = pathname
+                ? pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+                : false;
               return (
                 <Link
                   key={link.href}
