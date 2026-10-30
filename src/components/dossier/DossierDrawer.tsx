@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { enrichCompanyContacts, EnrichmentResult } from '@/engine/contact-enrichment';
 
 export interface DossierJobData {
   id: string;
@@ -61,6 +62,7 @@ export function DossierDrawer({
   const [linkedInNoteCopied, setLinkedInNoteCopied] = useState(false);
   const [draftStaged, setDraftStaged] = useState(false);
   const [selectedDoor, setSelectedDoor] = useState<'door1' | 'door2' | 'door3'>('door1');
+  const [enrichedContacts, setEnrichedContacts] = useState<EnrichmentResult | null>(null);
 
   // LinkedIn Note character limit: <= 300 chars
   const defaultLinkedInNote = job
@@ -69,13 +71,21 @@ export function DossierDrawer({
   const [linkedInNote, setLinkedInNote] = useState(defaultLinkedInNote);
 
   useEffect(() => {
+    if (job?.company) {
+      enrichCompanyContacts(job.company).then((res) => {
+        setEnrichedContacts(res);
+      });
+    }
+  }, [job?.company]);
+
+  useEffect(() => {
     if (job) {
       const contactName =
         selectedDoor === 'door1'
-          ? job.door1?.name
+          ? enrichedContacts?.door1.fullName || job.door1?.name
           : selectedDoor === 'door2'
-          ? job.door2?.name
-          : job.door3?.name;
+          ? enrichedContacts?.door2.fullName || job.door2?.name
+          : enrichedContacts?.door3.fullName || job.door3?.name;
       const firstName = contactName ? contactName.split(' ')[0] : 'there';
       setLinkedInNote(
         `Hi ${firstName}, noticed your team is building at ${job.company}. Having scaled product systems from 0 to 1M users, I have specific ideas on your growth roadmap. Would love to share insights.`
@@ -83,7 +93,7 @@ export function DossierDrawer({
       setLinkedInNoteCopied(false);
       setDraftStaged(false);
     }
-  }, [job, selectedDoor]);
+  }, [job, selectedDoor, enrichedContacts]);
 
   // In-Drawer Keyboard Navigation: Up (Prev), Down (Next), Esc (Close)
   const handleKeyDown = useCallback(
@@ -435,12 +445,17 @@ export function DossierDrawer({
             </div>
           )}
 
-          {/* TAB 4: BACKDOOR */}
+          {/* TAB 4: BACKDOOR CONTACTS */}
           {activeTab === 'doors' && (
             <div className="space-y-4">
-              <p className="text-xs text-slate-400">
-                Strategic outreach targets across three organizational entry doors. Zero personal phone numbers or addresses stored.
-              </p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs text-slate-400">
+                  Strategic outreach targets across three organizational entry doors. Zero personal phone numbers or addresses stored.
+                </p>
+                <span className="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                  Enrichment: {enrichedContacts?.provider === 'apollo' ? 'Apollo API' : 'Verified Public Directory'}
+                </span>
+              </div>
 
               {/* Door 1: Hiring Manager */}
               <div
@@ -452,33 +467,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#10B981]">
-                    Door 1: Hiring Manager
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#10B981] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                    Door 1: Hiring Manager / Executive
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 94%
+                    Confidence: {enrichedContacts?.door1.confidenceScore || job.door1?.confidence || 94}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door1?.name || 'Sarah Chen'}
+                  {enrichedContacts?.door1.fullName || job.door1?.name || 'Sarah Chen'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door1?.title || 'VP of Product'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door1.title || job.door1?.title || 'VP of Product'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door1?.title || 'VP Product'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door1.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door1.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door1.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door1?.title || 'VP Product'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door1.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door1');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door1'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
-                  <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20">
-                    Verified Work Email
-                  </span>
+                    {selectedDoor === 'door1' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
 
@@ -492,33 +531,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284C7]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284C7] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7]"></span>
                     Door 2: Recruiter / Talent Lead
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 88%
+                    Confidence: {enrichedContacts?.door2.confidenceScore || job.door2?.confidence || 88}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door2?.name || 'Alex Morgan'}
+                  {enrichedContacts?.door2.fullName || job.door2?.name || 'Alex Morgan'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door2?.title || 'Lead Product Recruiter'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door2.title || job.door2?.title || 'Lead Product Recruiter'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door2?.title || 'Product Recruiter'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door2.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door2.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door2.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door2?.title || 'Product Recruiter'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door2.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door2');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door2'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
-                  <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20">
-                    Verified Work Email
-                  </span>
+                    {selectedDoor === 'door2' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
 
@@ -532,30 +595,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                     Door 3: Peer / Staff PM
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 82%
+                    Confidence: {enrichedContacts?.door3.confidenceScore || job.door3?.confidence || 82}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door3?.name || 'David Kim'}
+                  {enrichedContacts?.door3.fullName || job.door3?.name || 'David Kim'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door3?.title || 'Staff Product Manager'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door3.title || job.door3?.title || 'Staff Product Manager'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door3?.title || 'Staff PM'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door3.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door3.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door3.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door3?.title || 'Staff PM'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door3.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door3');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door3'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
+                    {selectedDoor === 'door3' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
             </div>
