@@ -5,7 +5,7 @@
 - **Target Phase:** Phase 3 (Outreach & Cadence)
 - **Sprint Goal:** Deliver complete, verified end-to-end vertical slices for the 640px slide-out dossier drawer with route interception, Universal Ingest modal (`Shift + I`), Three Doors contact discovery, automated CV generation with zero metric hallucination (Rule R5), and the multi-channel Gmail cadence engine enforcing zero automatic sends (Rule R1) wired to the live Outreach Kanban board.
 - **Vertical Slice Mandate:** Every feature picked in this sprint must be delivered as a complete end-to-end experience spanning database schema, backend APIs, business logic engines, frontend UI components, keyboard navigation, and live verification. No partial mock layers or disconnected endpoints are permitted.
-- **Sprint Status:** `PLANNING`
+- **Sprint Status:** `COMPLETED`
 - **Target Start Date:** 2026-12-05
 - **Target Completion Date:** 2026-12-18
 
@@ -19,8 +19,8 @@
 | `S3-T02` | Universal Ingest Modal & Deduplication (`Shift + I`) | SSRF-safe scraper (`safe-fetch.ts`), canonical key generator, dedup API | Global `Shift + I` modal, duplicate alert badge, auto-drawer open | `COMPLETED` | Fullstack Lead |
 | `S3-T03` | Three Doors Contact Discovery & Multi-Provider Enrichment | Apollo/Hunter scraper pipeline, Door 1/2/3 classification, confidence score | Tab 4 "Backdoor" UI: 3-column contact cards, LinkedIn search CTA, target selector | `COMPLETED` | Fullstack Lead |
 | `S3-T04` | Tailored CV Builder & Google Drive PDF Staging (Rule R5) | Proof-point matcher, Rule R5 AST metric verifier, Google Docs/Drive PDF export | Tab 5 "Outreach & CV" UI: bullet diff viewer, Rule R5 metric chip, Drive PDF badge | `COMPLETED` | Fullstack Lead |
-| `S3-T05` | Gmail Draft Staging Engine (Rule R1) & Timezone Scheduler | Recipient timezone geocoder (09:15 Tue-Thu), `ThreeDoors/Drafts` creator, AST send check | Outreach draft editor, send-time badge, "Stage Draft in Gmail" CTA, deep link to Gmail | `PLANNED` | Fullstack Lead |
-| `S3-T06` | Outreach & Cadence Board (`/outreach`) & Lifecycle Engine | Application stage state machine, Gmail thread watcher, decision event logging | Kanban board (5 swimlanes), "Copy LinkedIn Note" ($\le 300$ chars), stage advancement UI | `PLANNED` | Fullstack Lead |
+| `S3-T05` | Gmail Draft Staging Engine (Rule R1) & Timezone Scheduler | Recipient timezone geocoder (09:15 Tue-Thu), `Backdoor/Drafts` creator, AST send check | Outreach draft editor, send-time badge, "Stage Draft in Gmail" CTA, deep link to Gmail | `COMPLETED` | Fullstack Lead |
+| `S3-T06` | Outreach & Cadence Board (`/outreach`) & Lifecycle Engine | Application stage state machine, Gmail thread watcher, decision event logging | Kanban board (5 swimlanes), "Copy LinkedIn Note" ($\le 300$ chars), stage advancement UI | `COMPLETED` | Fullstack Lead |
 
 ---
 
@@ -112,9 +112,10 @@
 
 #### Frontend Tasks
 - Build email draft preview editor inside Dossier Drawer pre-filled with Door-specific copy.
-- Display recipient timezone badge (e.g., *"Suggested Delivery: Tue 09:15 London (14:45 IST)"*).
+- Display sender-primary delivery window telemetry badge: calculates optimal Tue–Thu 09:15 AM recipient working hours, but renders primarily in sender's local timezone with recipient timezone as informative context (e.g., *"Suggested Dispatch: Tue 14:45 IST (09:15 London local)"*).
+- Provide user control: `[✓] Optimize dispatch for recipient business hours` checkbox with an interactive educational tooltip explaining the 3.8× response rate window and guiding the user to use Gmail Web "Schedule send".
 - Provide "Stage Draft in Gmail" CTA button with quota counter (e.g., *"36/40 drafts remaining today"*).
-- Upon staging, display "Draft Staged in Gmail" success banner with a direct one-click deep link to open the draft in Gmail web app for human review.
+- Upon staging, display "Draft Staged in Gmail" success banner with a direct one-click deep link to open the draft in Gmail web app for human review, with the suggested schedule time clearly noted.
 
 #### End-to-End User Experience & Verification
 - **User Journey:** Candidate reviews personalized email copy in drawer, confirms suggested Tuesday 09:15 London delivery window, and clicks "Stage Draft in Gmail". Draft appears immediately in user's Gmail `ThreeDoors/Drafts` folder. No email is ever sent automatically—the candidate retains 100% human dispatch control.
@@ -137,7 +138,7 @@
   3. *Follow-Up Due (Day 3/5)*
   4. *In Conversation*
   5. *Bounced / Cancelled*
-- Build `CadenceCard.tsx` rendering Door chip, company name, contact title, delivery window countdown, and thread status pill.
+- Build `CadenceCard.tsx` rendering Door chip, company name, contact title, sender-primary dispatch window countdown (e.g. `Dispatch Window: Tue 14:45 IST`), and thread status pill.
 - Add "Copy LinkedIn Note" one-click button copying $\le 300$-character tailored connection message to clipboard.
 
 #### End-to-End User Experience & Verification

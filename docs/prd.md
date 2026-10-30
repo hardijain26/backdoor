@@ -87,7 +87,7 @@ Every module requirement and automated background job must strictly follow these
 2. **Contact Selection:** Reviews Door 1 (Hiring Manager), Door 2 (Recruiter), and Door 3 (Peer).
 3. **Start Outreach:** Hardi clicks **"Start Outreach"**:
    * Module 4 clones the master Google Doc template, injects tailored proof points, and exports a zero-cost PDF to Google Drive.
-   * Module 7 computes the recipient's office timezone and generates a draft in Gmail under `Backdoor/Drafts` with a suggested send time (e.g., *"Tue 09:15 London (14:45 IST)"*).
+   * Module 7 resolves the recipient's office timezone, calculates the optimal 09:15 AM recipient working-hours window (Tue–Thu), and converts it primarily to the **sender's local timezone** (e.g., *"Tue 14:45 IST (09:15 London local)"*). Provides an in-drawer checkbox to toggle optimization with an explanatory tooltip, and stages a draft in Gmail under `Backdoor/Drafts`.
    * Module 7 formats a customized $\le 300$-character LinkedIn connection note.
 
 ### Journey 3: Review, Send & Thread Cadence
@@ -346,9 +346,12 @@ Every module requirement and automated background job must strictly follow these
     *   *Door 2 Draft:* Headcount/role fit summary with attached tailored PDF resume.
     *   *Door 3 Draft:* Peer-to-peer technical question and referral request.
     *   **No automated signature:** System leaves bottom clear; user's default Gmail signature applies.
-*   **M7-FR3 (P0) Recipient Timezone Scheduling:**
-    *   Resolves contact's office timezone from city, job location, or company HQ.
-    *   Recommends sending Tuesday through Thursday at **09:15 AM recipient local time**, displaying Hardi's equivalent time (e.g., *"Tue 09:15 London (14:45 IST)"*).
+*   **M7-FR3 (P0) Universal Recipient Timezone Scheduling & Sender-Primary Dispatch Nudge:**
+    *   Resolves contact's office timezone from city, job location, or company HQ across global hubs (London, SF, NYC, Berlin, Tokyo, etc.).
+    *   Targets delivery Tuesday through Thursday at **09:15 AM recipient local time** (peak executive open window post-inbox triage).
+    *   **Sender-Primary Display:** The primary schedule timestamp presented to the candidate is converted to the **sender's local timezone** (e.g. for an Indian sender targeting a UK role: *"Tue 14:45 IST (09:15 London local)"*), because the sender configures Gmail's Schedule Send according to their own local clock.
+    *   **Universal Multi-Region Logic:** Candidate's home timezone is resolved universally from their configured Country and State/Province in `/settings` (with browser `Intl.DateTimeFormat` timezone detection as automatic initial default).
+    *   **User Optimization Checkbox & Education Tooltip:** In-drawer toggle `[✓] Optimize dispatch for recipient business hours` with an interactive educational tooltip explaining the 3.8× response rate window and clarifying that Backdoor never auto-sends emails (Rule R1: candidate uses Gmail Web "Schedule send").
 *   **M7-FR4 (P0) Sent Detection:**
     *   Thread watcher checks Gmail thread; when a message carries `SENT` label, step status advances to `SENT` with timestamp recorded.
 *   **M7-FR5 (P0) Automated Follow-Up Drafts:**

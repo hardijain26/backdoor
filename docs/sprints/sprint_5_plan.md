@@ -53,15 +53,17 @@
 - Build negative filtering engine: matches incoming postings against excluded companies list, excluded title regex, and blocked industries (`FinTech`, `Payments`).
 - Implement dynamic tracks management API enabling user to customize track weights without database migrations.
 - Implement Google OAuth token status checker and refresh handler.
+- Implement User Location & Timezone preference endpoint (`PATCH /api/settings/profile`): stores user's home country and state/province to resolve their canonical IANA timezone for all cadence delivery window calculations.
 
 #### Frontend Tasks
-- Deliver tabbed `/settings` workspace: (1) Source Toggles, (2) Negative Filter Rules, (3) Dynamic Tracks, (4) Google Connection, (5) BYOK Secrets Vault.
+- Deliver tabbed `/settings` workspace: (1) Source Toggles, (2) Negative Filter Rules, (3) Dynamic Tracks, (4) Google Connection, (5) BYOK Secrets Vault, (6) Profile & Timezone.
+- Build Candidate Location & Timezone card: dropdown inputs for Country and State/Province with auto-detected browser timezone fallback, displaying resolved IANA timezone (e.g. `Asia/Kolkata`, `America/New_York`, `Europe/London`).
 - Build source toggle list with individual on/off switches for sources 1–35.
 - Build masked password inputs for BYOK keys with "Show/Hide" toggle and validation test buttons.
 - Display Google OAuth connection card with connected Gmail address, active token lifespan, and "Reconnect" button.
 
 #### End-to-End User Experience & Verification
-- **User Journey:** Candidate navigates to `/settings`, adds an excluded industry ("FinTech"), and pastes their Apollo.io API key. The key is encrypted instantly, and all FinTech opportunities are immediately removed from the Morning Radar feed.
+- **User Journey:** Candidate navigates to `/settings`, sets their Country ("India") and State ("Karnataka"), and pastes their Apollo.io API key. The location resolves to `Asia/Kolkata`. When reviewing an outreach draft to a London-based recruiter, the cadence engine computes 09:15 AM London working hours and displays the dispatch window in the candidate's local time (`Tue 14:45 IST`). Negative filter rules and encrypted keys update instantly.
 - **Verification:** `npm run test:node tests/settings-encryption.test.ts` and `npm run test:unit tests/frontend/settings-workspace.test.tsx`.
 
 ---
