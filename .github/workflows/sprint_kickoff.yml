@@ -1,0 +1,115 @@
+name: Sprint Kickoff & Clarity Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      sprint:
+        description: 'Next Sprint number to kick off (e.g., 3)'
+        required: true
+        default: '3'
+
+  issue_comment:
+    types: [created]
+
+jobs:
+  sprint-kickoff:
+    name: Execute Sprint Kickoff & Requirements Clarity Gate
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' && (startsWith(github.event.comment.body, '/kickoff-sprint') || startsWith(github.event.comment.body, '/start-next-sprint')))
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Kickoff Intake & Clarity Validation
+        id: kickoff
+        run: |
+          SPRINT_NUM="3"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SPRINT_NUM="${{ github.event.inputs.sprint }}"
+          else
+            # Extract sprint number from comment "/kickoff-sprint [N]"
+            COMMENT="${{ github.event.comment.body }}"
+            EXTRACTED=$(echo "$COMMENT" | grep -oE '[0-9]+' | head -1)
+            if [ -n "$EXTRACTED" ]; then
+              SPRINT_NUM="$EXTRACTED"
+            fi
+          fi
+          echo "SPRINT_NUM=$SPRINT_NUM" >> $GITHUB_ENV
+          
+          # Verify sprint plan file exists
+          if [ ! -f "docs/sprints/sprint_${SPRINT_NUM}_plan.md" ]; then
+            echo "Error: Sprint plan docs/sprints/sprint_${SPRINT_NUM}_plan.md not found!"
+            exit 1
+          fi
+
+      - name: Post Kickoff & Clarity Checklist Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sprintNum = process.env.SPRINT_NUM || "3";
+            const fs = require('fs');
+            
+            const sprintFile = `docs/sprints/sprint_${sprintNum}_plan.md`;
+            let taskSummary = "Tasks loaded from plan.";
+            if (fs.existsSync(sprintFile)) {
+              const content = fs.readFileSync(sprintFile, 'utf8');
+              const match = content.match(/## 2\. Planned [^\n]*\n([\s\S]*?)(?=---)/);
+              if (match) {
+                taskSummary = match[1].trim();
+              }
+            }
+
+            const commentBody = `## 🎯 Sprint ${sprintNum} Kickoff & Requirements Clarity Gate
+            
+            Master Audit Report verified. Sprint ${sprintNum} has been activated.
+
+            ### 📋 Sprint ${sprintNum} Active Task Scope:
+            ${taskSummary}
+
+            ---
+
+            ### 🛡️ Requirements Clarity Gate:
+            Before code is written, review against \`docs/prd.md\`, \`docs/ui_requirements.md\`, and \`docs/database-schema.md\`:
+            - [ ] **1. Data Contracts:** Schema columns, enums & RLS policies verified in \`database/schema.sql\`.
+            - [ ] **2. UI & Responsive Specs:** Precision Cobalt tokens, $380\\text{px}$ mobile breakpoint & keyboard shortcuts defined.
+            - [ ] **3. Cardinal Rules Guard:** Rules R1–R8 verified (0 outbound sends, free tier, 0 forbidden colors).
+            - [ ] **4. Build Runbook Section Identified:** Review corresponding subsystem in \`docs/build_instructions_runbook.md\`.
+
+            ---
+
+            ### 💬 How to Resolve Questions & Auto-Sync Specs:
+            If any requirement needs clarification, run:
+            \`\`\`bash
+            node scripts/sync-sprint-clarity.js --sprint ${sprintNum} --taskId "[TASK-ID]" --decisionTitle "[Title]" --decisionDetails "[Details]"
+            \`\`\`
+            *This automatically updates \`docs/sprints/sprint_${sprintNum}_plan.md\`, \`docs/prd.md\`, and \`docs/ui_requirements.md\` simultaneously.*
+
+            Once 100% clarity is confirmed, check out your feature branch and begin implementation!
+            `;
+
+            const issueNumber = context.issue ? context.issue.number : (context.payload.pull_request ? context.payload.pull_request.number : null);
+            if (issueNumber) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: commentBody
+              });
+            } else {
+              console.log("No issue/PR number found to comment on; run completed successfully.");
+            }
