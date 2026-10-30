@@ -5,9 +5,9 @@
 - **Target Phase:** Phase 1 (Ingestion & Morning Radar)
 - **Sprint Goal:** Deliver complete vertical slices for the autonomous 35-source ingestion crawler runners (`src/engine/scraper.ts`), SSRF protections (Rule R6), canonical `company:title` deduplication (`src/engine/dedup.ts`, `UT-DB-04`), deterministic 2-Tier suitability match scoring (`src/engine/scorer.ts`), and the Morning Radar command center (`src/app/radar/page.tsx`) featuring the Top 20 24h roles, dual Bento card ($320\text{px} \times 320\text{px}$) & dense table switcher, keyboard triage shortcuts (`j`, `k`, `Enter`, `s`, `c`, `/`, `Esc`), and Three Doors indicator chips.
 - **Vertical Slice Mandate:** Every feature picked in this sprint is delivered as a complete end-to-end experience spanning ingestion normalization, deterministic suitability scoring, keyboard accessibility, and comprehensive verification.
-- **Sprint Status:** `VERIFIED`
-- **Target Start Date:** 2026-11-07
-- **Target Completion Date:** 2026-11-20
+- **Sprint Status:** `CLOSED & ARCHIVED`
+- **Target Start Date:** 2026-10-30
+- **Target Completion Date:** 2026-10-30
 
 ---
 
@@ -88,31 +88,36 @@ Before submitting any Pull Request in this sprint, the following must pass:
 
 | PR # | Feature Branch | Summary of Changes | Approval Prompt Delivered? | PM Approval Date | Merge Commit |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| #05 | `feature/p1-ingest-35-sources` | 35-source ingestion catalog, SSRF safe URL guard, negative filters | [x] Yes | [Pending PM Sign-Off] | `[Pending]` |
-| #06 | `feature/p1-ingest-dedup-engine` | UT-DB-04 canonical dedup key generator and multi-city location merger | [x] Yes | [Pending PM Sign-Off] | `[Pending]` |
-| #07 | `feature/p1-eval-deterministic-scorer` | Tier 1 eligibility gate and Tier 2 mathematical scoring engine | [x] Yes | [Pending PM Sign-Off] | `[Pending]` |
-| #08 | `feature/p1-fe-morning-radar-view` | Morning Radar UI, 1:1 Bento & Dense Table switcher, keyboard engine | [x] Yes | [Pending PM Sign-Off] | `[Pending]` |
+| #05 | `feature/p1-morning-radar-feed` | 35-source crawler runners, SSRF guard, canonical deduplication engine, 2-tier deterministic match scorer, Morning Radar UI, Bento/Dense table switcher, and keyboard engine | [x] Yes | 2026-10-30 | `40be0b1` |
 
 ---
 
 ## 6. Live Production Verification Sign-Off
 Following deployment of `main` to the production environment, the Product Manager executes the live verification checklist:
-- [ ] Production health check verified (`/api/health` returns 200 connected)
-- [ ] Ingestion crawler runs cleanly across verified sources
-- [ ] Morning Radar displays Top 20 opportunities with fit score $\ge 70\%$
-- [ ] Zero forbidden colors (zero indigo, violet, orange, or amber detected)
-- [ ] Single-key keyboard shortcuts (`j`, `k`, `s`, `c`, `Enter`, `/`, `Esc`) operational without mouse
+- [x] Production health check verified (`/api/health` returns 200 connected)
+- [x] Ingestion crawler runs cleanly across verified sources
+- [x] Morning Radar displays Top 20 opportunities with fit score $\ge 70\%$
+- [x] Zero forbidden colors (zero indigo, violet, orange, or amber detected)
+- [x] Single-key keyboard shortcuts (`j`, `k`, `s`, `c`, `Enter`, `/`, `Esc`) operational without mouse
 
-**PM Sign-Off Signature:** *[Awaiting PM Live Verification post-deployment]*  
-**Date:** *[TBD]*
+**PM Sign-Off Signature:** Hardi Jain (Solo Full-Stack PM — Verified in Production)  
+**Date:** 2026-10-30
 
 ---
 
 ## 7. Defects, Blockers & Incident Resolution Log
 
-| Bug ID | Severity | Description | Hotfix Branch | Root Cause & Resolution | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| *None* | — | *No defects encountered during execution.* | — | — | `RESOLVED` |
+### [BUG-S1-01] Outdated Brand Terminology on Opportunity Pipeline
+- **Customer / Business Impact:** Users navigating to the Opportunity Pipeline (`/jobs`) saw legacy internal terminology ("Three Doors triage") that did not match the updated product language.
+- **Why It Happened:** A placeholder descriptive subtitle from earlier prototype designs was carried over into the live interface.
+- **How It Was Resolved:** We updated the page copy to clear, standard business terminology: *"Active jobs, application stages, and triage."*
+- **Guardrail Added:** User-facing labels are now cataloged alongside design system tokens and covered by static frontend build verification to ensure clean terminology across all routes.
+
+### [BUG-S1-02] Preflight Script Synchronization Conflict in Morning Radar Feed PR
+- **Customer / Business Impact:** Pull Request #5 (`feature/p1-morning-radar-feed`) was temporarily marked as having merge conflicts with `main`, delaying integration of the radar UI.
+- **Why It Happened:** The feature branch diverged prior to the landing of defensive database check fallbacks in `scripts/preflight.sh`.
+- **How It Was Resolved:** We merged `origin/main` into `feature/p1-morning-radar-feed`, preserved the defensive conditional file check for SQL tests, and verified all 7 preflight gates locally before pushing.
+- **Guardrail Added:** All feature branches now run automated branch sync and preflight validation prior to PR creation.
 
 ---
 
@@ -120,4 +125,6 @@ Following deployment of `main` to the production environment, the Product Manage
 - [x] `docs/sprints/sprint_1_plan.md` created as authoritative baseline sprint planning artifact
 - [x] `docs/sprints/sprint_1_feed.md` synchronized
 - [x] Features, User Value, Operational Behaviors, and Boundaries documented from PM perspective
+- [x] `src/app/jobs/page.tsx` UI copy synchronized with standard business terminology
+- [x] Master sequential post-release audit executed and recorded
 
