@@ -74,7 +74,7 @@ export interface ScrapedJob {
   postedAt?: string;
 }
 
-export const USER_AGENT = 'ThreeDoorsBot/1.0 (+https://threedoors.app/bot)';
+export const USER_AGENT = 'BackdoorBot/1.0 (+https://backdoor.app/bot)';
 
 /**
  * SSRF Safe URL Validator (Rule R6)

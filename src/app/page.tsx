@@ -4,7 +4,7 @@ export default function HomePage() {
       <div className="max-w-2xl space-y-4">
         <h1 className="text-4xl font-bold tracking-tight text-white">Backdoor v1.0</h1>
         <p className="text-slate-400">
-          Career acceleration command center based on the Three Doors thesis.
+          Career acceleration command center based on the Backdoor thesis.
         </p>
         <div className="flex justify-center gap-4 pt-4">
           <a

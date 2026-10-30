@@ -47,7 +47,7 @@ test('UT-DD-02: 5-Tab Architecture (Spec, Match, Intel, Doors, Draft)', () => {
   assert.ok(content.includes('1. Spec'), 'Tab 1 label must be "1. Spec"');
   assert.ok(content.includes('2. Match'), 'Tab 2 label must be "2. Match"');
   assert.ok(content.includes('3. Intel'), 'Tab 3 label must be "3. Intel"');
-  assert.ok(content.includes('4. Three Doors'), 'Tab 4 label must be "4. Three Doors"');
+  assert.ok(content.includes('4. Backdoor'), 'Tab 4 label must be "4. Backdoor"');
   assert.ok(content.includes('5. Outreach & CV'), 'Tab 5 label must be "5. Outreach & CV"');
 });
 
@@ -64,10 +64,10 @@ test('UT-DD-04: Rule R1 Invariant: Gmail Draft Staging (Zero Auto-Send)', () => 
   const componentPath = path.resolve(process.cwd(), 'src/components/dossier/DossierDrawer.tsx');
   const content = fs.readFileSync(componentPath, 'utf8');
 
-  // Verify staging in ThreeDoors/Drafts
+  // Verify staging in Backdoor/Drafts
   assert.ok(
-    content.includes('ThreeDoors/Drafts'),
-    'Outreach tab must reference ThreeDoors/Drafts label'
+    content.includes('Backdoor/Drafts'),
+    'Outreach tab must reference Backdoor/Drafts label'
   );
 
   // Permanently forbid messages.send call

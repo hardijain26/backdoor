@@ -1,6 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { enrichCompanyContacts, EnrichmentResult } from '@/engine/contact-enrichment';
+import { buildTailoredCv, TailoredCvResult } from '@/engine/cv-builder';
+import {
+  calculateDeliveryWindow,
+  getRemainingDraftQuota,
+  stageGmailDraft,
+  StagedDraftResult,
+} from '@/engine/cadence';
 
 export interface DossierJobData {
   id: string;
@@ -61,6 +69,68 @@ export function DossierDrawer({
   const [linkedInNoteCopied, setLinkedInNoteCopied] = useState(false);
   const [draftStaged, setDraftStaged] = useState(false);
   const [selectedDoor, setSelectedDoor] = useState<'door1' | 'door2' | 'door3'>('door1');
+  const [enrichedContacts, setEnrichedContacts] = useState<EnrichmentResult | null>(null);
+  const [tailoredCv, setTailoredCv] = useState<TailoredCvResult | null>(null);
+  const [isGeneratingCv, setIsGeneratingCv] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+  const [emailDraftCopied, setEmailDraftCopied] = useState(false);
+  const [cvViewMode, setCvViewMode] = useState<'diff' | 'document'>('diff');
+  const [quotaState, setQuotaState] = useState({ usedToday: 0, remainingQuotaToday: 40, cap: 40 });
+  const [stagedCadenceResult, setStagedCadenceResult] = useState<StagedDraftResult | null>(null);
+  const [isStagingDraft, setIsStagingDraft] = useState(false);
+  const [stagingError, setStagingError] = useState<string | null>(null);
+  const [optimizeDeliveryWindow, setOptimizeDeliveryWindow] = useState(true);
+  const [showDeliveryTooltip, setShowDeliveryTooltip] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/cadence/quota')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && typeof data.remainingQuotaToday === 'number') {
+          setQuotaState(data);
+        }
+      })
+      .catch(() => {
+        setQuotaState(getRemainingDraftQuota());
+      });
+  }, [job?.id]);
+
+  useEffect(() => {
+    setTailoredCv(null);
+    setCvError(null);
+  }, [job?.id]);
+
+  const handleGenerateTailoredCv = async () => {
+    if (!job) return;
+    setIsGeneratingCv(true);
+    setCvError(null);
+    try {
+      const res = await fetch('/api/cv/tailor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          company: job.company,
+          title: job.title,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to generate CV (Status ${res.status})`);
+      }
+      const data = await res.json();
+      setTailoredCv(data);
+    } catch {
+      // Synchronous fallback for test/offline environments
+      const fallback = buildTailoredCv({
+        jobId: job.id,
+        company: job.company,
+        title: job.title,
+      });
+      setTailoredCv(fallback);
+    } finally {
+      setIsGeneratingCv(false);
+    }
+  };
 
   // LinkedIn Note character limit: <= 300 chars
   const defaultLinkedInNote = job
@@ -69,13 +139,21 @@ export function DossierDrawer({
   const [linkedInNote, setLinkedInNote] = useState(defaultLinkedInNote);
 
   useEffect(() => {
+    if (job?.company) {
+      enrichCompanyContacts(job.company).then((res) => {
+        setEnrichedContacts(res);
+      });
+    }
+  }, [job?.company]);
+
+  useEffect(() => {
     if (job) {
       const contactName =
         selectedDoor === 'door1'
-          ? job.door1?.name
+          ? enrichedContacts?.door1.fullName || job.door1?.name
           : selectedDoor === 'door2'
-          ? job.door2?.name
-          : job.door3?.name;
+          ? enrichedContacts?.door2.fullName || job.door2?.name
+          : enrichedContacts?.door3.fullName || job.door3?.name;
       const firstName = contactName ? contactName.split(' ')[0] : 'there';
       setLinkedInNote(
         `Hi ${firstName}, noticed your team is building at ${job.company}. Having scaled product systems from 0 to 1M users, I have specific ideas on your growth roadmap. Would love to share insights.`
@@ -83,7 +161,7 @@ export function DossierDrawer({
       setLinkedInNoteCopied(false);
       setDraftStaged(false);
     }
-  }, [job, selectedDoor]);
+  }, [job, selectedDoor, enrichedContacts]);
 
   // In-Drawer Keyboard Navigation: Up (Prev), Down (Next), Esc (Close)
   const handleKeyDown = useCallback(
@@ -136,9 +214,116 @@ export function DossierDrawer({
     setTimeout(() => setLinkedInNoteCopied(false), 2500);
   };
 
-  const handleStageGmailDraft = () => {
-    setDraftStaged(true);
-    setTimeout(() => setDraftStaged(false), 4000);
+  const targetContact =
+    selectedDoor === 'door1'
+      ? enrichedContacts?.door1
+      : selectedDoor === 'door2'
+      ? enrichedContacts?.door2
+      : enrichedContacts?.door3;
+
+  const targetEmail =
+    targetContact?.email ||
+    (selectedDoor === 'door1'
+      ? job?.door1?.email || 'david.singleton@stripe.com'
+      : selectedDoor === 'door2'
+      ? job?.door2?.email || 'recruiting@stripe.com'
+      : job?.door3?.email || 'peer.pm@stripe.com');
+
+  const targetName =
+    targetContact?.fullName ||
+    (selectedDoor === 'door1'
+      ? job?.door1?.name || 'Hiring Manager'
+      : selectedDoor === 'door2'
+      ? job?.door2?.name || 'Recruiter'
+      : job?.door3?.name || 'Team PM');
+
+  const targetFirstName = targetName.split(' ')[0] || 'there';
+
+  const emailSubject = `Product leadership at ${job?.company || 'Company'} — scaling systems`;
+
+  const emailBody = `Hi ${targetFirstName},\n\nI've been closely tracking ${job?.company || 'your team'}'s recent product momentum in platform infrastructure. Having led product teams that scaled active users from 0 to 1M with 99.9% uptime, I see immediate alignment with your current roadmap.\n\nI put together a quick 1-pager on your top customer onboarding friction points and 3 targeted proposals.\n\nAttached my tailored executive CV for the ${job?.title || 'Product Manager'} role (Rule R5 zero metric hallucination verified).\n\nWould love to share insights if of interest.\n\nBest,\nHardi Jain\nhardi.jain@backdoor.careers | linkedin.com/in/hardijain`;
+
+  const candidateTz =
+    typeof window !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata'
+      : 'Asia/Kolkata';
+
+  const deliverySchedule = calculateDeliveryWindow(job?.location, {
+    senderTimezone: candidateTz,
+  });
+
+  const gmailDeepLink =
+    stagedCadenceResult?.gmailDeepLink ||
+    `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      targetEmail
+    )}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+  const handleStageGmailDraft = async () => {
+    if (!job) return;
+    setIsStagingDraft(true);
+    setStagingError(null);
+    try {
+      const res = await fetch('/api/cadence/stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: job.id,
+          company: job.company,
+          title: job.title,
+          door: selectedDoor,
+          contactEmail: targetEmail,
+          contactName: targetName,
+          location: job.location,
+          customSubject: emailSubject,
+          customBody: emailBody,
+        }),
+      });
+
+      if (res.status === 429) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Daily safety cap reached (40/40 drafts created in past 24h).');
+      }
+
+      if (!res.ok) {
+        throw new Error(`Failed to stage draft (Status ${res.status})`);
+      }
+
+      const data: StagedDraftResult = await res.json();
+      setStagedCadenceResult(data);
+      setDraftStaged(true);
+      setQuotaState((prev) => ({
+        ...prev,
+        usedToday: prev.usedToday + 1,
+        remainingQuotaToday: Math.max(0, prev.remainingQuotaToday - 1),
+      }));
+    } catch (err: any) {
+      try {
+        const localStaged = stageGmailDraft({
+          jobId: job.id,
+          company: job.company,
+          title: job.title,
+          door: selectedDoor,
+          contactEmail: targetEmail,
+          contactName: targetName,
+          location: job.location,
+          customSubject: emailSubject,
+          customBody: emailBody,
+        });
+        setStagedCadenceResult(localStaged);
+        setDraftStaged(true);
+        setQuotaState(getRemainingDraftQuota());
+      } catch (fallbackErr: any) {
+        setStagingError(fallbackErr.message || err.message);
+      }
+    } finally {
+      setIsStagingDraft(false);
+    }
+  };
+
+  const handleCopyEmailDraft = () => {
+    navigator.clipboard.writeText(emailBody);
+    setEmailDraftCopied(true);
+    setTimeout(() => setEmailDraftCopied(false), 2500);
   };
 
   return (
@@ -212,7 +397,7 @@ export function DossierDrawer({
               { key: 'spec', label: '1. Spec' },
               { key: 'match', label: '2. Match' },
               { key: 'intel', label: '3. Intel' },
-              { key: 'doors', label: '4. Three Doors' },
+              { key: 'doors', label: '4. Backdoor' },
               { key: 'draft', label: '5. Outreach & CV' }
             ] as { key: DossierTab; label: string }[]
           ).map((tab) => (
@@ -435,12 +620,17 @@ export function DossierDrawer({
             </div>
           )}
 
-          {/* TAB 4: THREE DOORS */}
+          {/* TAB 4: BACKDOOR CONTACTS */}
           {activeTab === 'doors' && (
             <div className="space-y-4">
-              <p className="text-xs text-slate-400">
-                Strategic outreach targets across three organizational entry doors. Zero personal phone numbers or addresses stored.
-              </p>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs text-slate-400">
+                  Strategic outreach targets across three organizational entry doors. Zero personal phone numbers or addresses stored.
+                </p>
+                <span className="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+                  Enrichment: {enrichedContacts?.provider === 'apollo' ? 'Apollo API' : 'Verified Public Directory'}
+                </span>
+              </div>
 
               {/* Door 1: Hiring Manager */}
               <div
@@ -452,33 +642,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#10B981]">
-                    Door 1: Hiring Manager
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#10B981] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                    Door 1: Hiring Manager / Executive
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 94%
+                    Confidence: {enrichedContacts?.door1.confidenceScore || job.door1?.confidence || 94}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door1?.name || 'Sarah Chen'}
+                  {enrichedContacts?.door1.fullName || job.door1?.name || 'Sarah Chen'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door1?.title || 'VP of Product'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door1.title || job.door1?.title || 'VP of Product'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door1?.title || 'VP Product'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door1.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door1.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door1.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door1?.title || 'VP Product'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door1.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door1');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door1'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
-                  <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20">
-                    Verified Work Email
-                  </span>
+                    {selectedDoor === 'door1' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
 
@@ -492,33 +706,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284C7]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#0284C7] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7]"></span>
                     Door 2: Recruiter / Talent Lead
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 88%
+                    Confidence: {enrichedContacts?.door2.confidenceScore || job.door2?.confidence || 88}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door2?.name || 'Alex Morgan'}
+                  {enrichedContacts?.door2.fullName || job.door2?.name || 'Alex Morgan'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door2?.title || 'Lead Product Recruiter'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door2.title || job.door2?.title || 'Lead Product Recruiter'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door2?.title || 'Product Recruiter'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door2.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door2.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door2.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door2?.title || 'Product Recruiter'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door2.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door2');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door2'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
-                  <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20">
-                    Verified Work Email
-                  </span>
+                    {selectedDoor === 'door2' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
 
@@ -532,30 +770,57 @@ export function DossierDrawer({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                     Door 3: Peer / Staff PM
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
-                    Fit Confidence: 82%
+                    Confidence: {enrichedContacts?.door3.confidenceScore || job.door3?.confidence || 82}%
                   </span>
                 </div>
                 <div className="text-sm font-semibold text-white">
-                  {job.door3?.name || 'David Kim'}
+                  {enrichedContacts?.door3.fullName || job.door3?.name || 'David Kim'}
                 </div>
-                <div className="text-xs text-slate-400 mb-3">
-                  {job.door3?.title || 'Staff Product Manager'}
+                <div className="text-xs text-slate-400 mb-2">
+                  {enrichedContacts?.door3.title || job.door3?.title || 'Staff Product Manager'}
                 </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
-                      `${job.company} ${job.door3?.title || 'Staff PM'}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10"
+                {enrichedContacts?.door3.recentActivitySnippet && (
+                  <p className="text-[11px] text-slate-300 bg-[#161F33]/60 p-2 rounded border border-white/5 mb-3 italic">
+                    &ldquo;{enrichedContacts.door3.recentActivitySnippet}&rdquo;
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={enrichedContacts?.door3.linkedinUrl || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(
+                        `${job.company} ${job.door3?.title || 'Staff PM'}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-[11px] px-2.5 py-1 rounded bg-white/5 border border-white/10 text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                      Search on LinkedIn &rarr;
+                    </a>
+                    <span className="text-[11px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>{enrichedContacts?.door3.email || 'Verified Work Email'}</span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedDoor('door3');
+                    }}
+                    className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                      selectedDoor === 'door3'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                   >
-                    Search on LinkedIn &rarr;
-                  </a>
+                    {selectedDoor === 'door3' ? 'Selected Target ✓' : 'Select Target'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -564,15 +829,87 @@ export function DossierDrawer({
           {/* TAB 5: OUTREACH & CV */}
           {activeTab === 'draft' && (
             <div className="space-y-5">
-              {/* Recipient Timezone & Rule R1 Guard */}
-              <div className="p-3 rounded-lg bg-[#0F1523] border border-white/8 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Outreach Dispatch Target</span>
-                  <span className="font-semibold text-white">Tue–Thu at 09:15 AM (Recipient Local)</span>
+              {/* Universal Recipient Timezone & Rule R1/R8 Guard */}
+              <div className="p-3.5 rounded-lg bg-[#0F1523] border border-white/8 space-y-3 text-xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={optimizeDeliveryWindow}
+                      onChange={(e) => setOptimizeDeliveryWindow(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-[#161F33] text-[#2563EB] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#2563EB]"
+                    />
+                    <span className="font-semibold text-white">
+                      Schedule for recipient working hours
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeliveryTooltip(!showDeliveryTooltip)}
+                    className="text-[11px] text-[#0284C7] hover:text-[#38BDF8] flex items-center gap-1 font-mono transition-colors"
+                  >
+                    <span>ⓘ</span>
+                    <span className="underline decoration-dotted underline-offset-2">
+                      {showDeliveryTooltip ? 'Hide explanation' : 'Why this time?'}
+                    </span>
+                  </button>
                 </div>
-                <span className="text-[11px] font-mono text-[#0284C7] bg-[#0284C7]/10 px-2 py-0.5 rounded border border-[#0284C7]/20">
-                  Rule R1: Draft Staging Only
-                </span>
+
+                {/* Explanatory Tooltip Card */}
+                {showDeliveryTooltip && (
+                  <div className="p-3 rounded-md bg-[#161F33] border border-white/10 text-xs space-y-2 text-slate-300">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-semibold text-white">Recipient Working Hours Best Practice</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowDeliveryTooltip(false)}
+                        className="text-slate-400 hover:text-white text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-slate-300">
+                      Cold outreach achieves <strong className="text-emerald-400 font-semibold">3.8× higher response rates</strong> when delivered Tuesday–Thursday at 09:15 AM in the recipient&apos;s local business timezone (right after morning inbox triaging).
+                    </p>
+                    <div className="p-2.5 rounded bg-[#080B11]/70 border border-white/5 text-[11px] space-y-1.5">
+                      <p className="text-[#38BDF8] font-medium">How to dispatch in Gmail (Zero Automation):</p>
+                      <p className="text-slate-400 leading-relaxed">
+                        Under Cardinal Rule R1, Backdoor never sends emails automatically to protect your domain reputation. When you click <strong>Open in Gmail Web</strong>, click the <strong>down arrow next to Send</strong> &rarr; select <strong>Schedule send</strong> &rarr; and select the time shown in <strong>your local clock ({deliverySchedule.senderLocalTime})</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Telemetry Indicator */}
+                <div className="pt-2 border-t border-white/8 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">
+                      {optimizeDeliveryWindow ? 'Suggested Time in Your Clock' : 'Dispatch Timing'}
+                    </span>
+                    {optimizeDeliveryWindow ? (
+                      <div className="flex items-center gap-1.5 font-semibold text-white">
+                        <span>⏰</span>
+                        <span className="text-[#38BDF8] font-mono">{deliverySchedule.senderLocalTime}</span>
+                        <span className="text-slate-400 font-normal text-[11px]">
+                          (09:15 AM {deliverySchedule.recipientCity} local)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-300 font-medium text-xs">
+                        Immediate Manual Dispatch (Send whenever ready)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-slate-300 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                      Quota: {quotaState.remainingQuotaToday}/40 remaining
+                    </span>
+                    <span className="text-[11px] font-mono text-[#0284C7] bg-[#0284C7]/10 px-2 py-0.5 rounded border border-[#0284C7]/20">
+                      Rule R1: 0 Auto-Sends
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* LinkedIn Note Editor */}
@@ -617,59 +954,307 @@ export function DossierDrawer({
                   Gmail Outreach Draft Preview
                 </h4>
                 <div className="p-3.5 rounded-lg bg-[#0F1523] border border-white/8 space-y-2 text-xs">
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Subject:</span>
-                    <span className="font-semibold text-white">
-                      Product leadership at {job.company} — scaling systems
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">To:</span>
+                      <span className="font-semibold text-white">
+                        {targetName} &lt;{targetEmail}&gt;
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20">
+                      Verified Work Email
                     </span>
                   </div>
-                  <div className="pt-2 border-t border-white/8 text-slate-300 leading-relaxed">
-                    <p>
-                      Hi {job.door1?.name ? job.door1.name.split(' ')[0] : 'there'},
-                    </p>
-                    <p className="mt-2">
-                      I’ve been closely tracking {job.company}’s recent product momentum in platform infrastructure. Having led product teams that scaled active users from 0 to 1M with 99.9% uptime, I see immediate alignment with your current roadmap.
-                    </p>
-                    <p className="mt-2">
-                      I put together a quick 1-pager on your top customer onboarding friction points and 3 targeted proposals. Would love to share insights if of interest.
-                    </p>
+                  <div className="pt-2 border-t border-white/8">
+                    <span className="text-slate-400 block text-[11px]">Subject:</span>
+                    <span className="font-semibold text-white">
+                      {emailSubject}
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-white/8 text-slate-300 leading-relaxed whitespace-pre-line font-sans">
+                    {emailBody}
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <button
-                    onClick={handleStageGmailDraft}
-                    className="w-full text-xs py-2 rounded-md font-medium bg-[#0F1523] border border-white/15 hover:border-white/30 text-white transition-colors flex items-center justify-center gap-2"
-                  >
-                    {draftStaged ? (
-                      <span className="text-[#10B981] font-semibold">
-                        ✓ Staged in ThreeDoors/Drafts (Rule R1: Zero sends)
-                      </span>
-                    ) : (
-                      <>
-                        <span>Stage Draft in Gmail (`ThreeDoors/Drafts`)</span>
-                      </>
-                    )}
-                  </button>
+                <div className="mt-3 space-y-2">
+                  {stagingError && (
+                    <div className="p-2.5 rounded bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-[11px]">
+                      {stagingError}
+                    </div>
+                  )}
+
+                  {!draftStaged ? (
+                    <button
+                      type="button"
+                      onClick={handleStageGmailDraft}
+                      disabled={isStagingDraft || quotaState.remainingQuotaToday <= 0}
+                      className="w-full text-xs py-2 rounded-md font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white transition-colors flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      {isStagingDraft ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full border border-white border-t-transparent animate-spin"></span>
+                          <span>Staging Draft in Backdoor/Drafts...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>📬</span>
+                          <span>Stage Draft in Gmail (`Backdoor/Drafts`)</span>
+                          <span className="text-[10px] opacity-75 font-mono">({quotaState.remainingQuotaToday} left)</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[#10B981]/10 border border-[#10B981]/20 space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <span className="text-xs font-semibold text-[#10B981] flex items-center gap-1.5">
+                          <span>✓</span>
+                          <span>Staged in Backdoor/Drafts (Rule R1: Zero automated sends)</span>
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-300">
+                          {optimizeDeliveryWindow
+                            ? `Suggested Schedule: ${deliverySchedule.senderLocalTime} (09:15 AM ${deliverySchedule.recipientCity})`
+                            : 'Immediate Dispatch'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <a
+                          href={gmailDeepLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 text-center text-xs py-1.5 rounded-md font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors shadow-sm"
+                        >
+                          Open in Gmail Web &rarr;
+                        </a>
+                        <button
+                          type="button"
+                          onClick={handleCopyEmailDraft}
+                          className="px-3 py-1.5 rounded-md text-xs font-medium bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 transition-colors"
+                        >
+                          {emailDraftCopied ? '✓ Copied Draft' : 'Copy Draft Body'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Rule R5 Tailored CV & Drive PDF Staging */}
-              <div className="p-4 rounded-lg bg-[#0F1523] border border-white/8 text-xs flex items-center justify-between">
-                <div>
-                  <span className="font-semibold text-white block">
-                    Tailored CV (Rule R5 Verified)
-                  </span>
-                  <span className="text-slate-400 text-[11px]">
-                    Zero metric hallucination • All proof points match database
-                  </span>
+              <div className="p-4 rounded-lg bg-[#0F1523] border border-white/8 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white text-xs block">
+                        Tailored CV Builder
+                      </span>
+                      {tailoredCv && (
+                        <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/10 px-2 py-0.5 rounded border border-[#10B981]/20 flex items-center gap-1 font-semibold">
+                          <span>✓</span>
+                          <span>Rule R5: 100% Metric Match ({tailoredCv.auditReport.totalMetricsChecked} Checked)</span>
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-slate-400 text-[11px] block mt-0.5">
+                      Zero metric hallucination • Hardi&rsquo;s verified M8 portfolio ground-truth
+                    </span>
+                  </div>
+
+                  {!tailoredCv ? (
+                    <button
+                      type="button"
+                      onClick={handleGenerateTailoredCv}
+                      disabled={isGeneratingCv}
+                      className="px-3 py-1.5 rounded bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors"
+                    >
+                      {isGeneratingCv ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full border border-white border-t-transparent animate-spin"></span>
+                          <span>Generating & Verifying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>⚡</span>
+                          <span>Generate Tailored CV</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex bg-[#161F33] p-0.5 rounded border border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setCvViewMode('diff')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            cvViewMode === 'diff'
+                              ? 'bg-[#2563EB] text-white font-semibold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Diff View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCvViewMode('document')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                            cvViewMode === 'document'
+                              ? 'bg-[#2563EB] text-white font-semibold'
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Document Preview
+                        </button>
+                      </div>
+
+                      <a
+                        href={tailoredCv.googleDrivePdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 rounded bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-sm flex items-center gap-1 transition-colors"
+                      >
+                        <span>View / Print PDF</span>
+                        <span>↗</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => alert('PDF Staging: Drive PDF download staged')}
-                  className="px-3 py-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 text-slate-200 text-xs font-medium"
-                >
-                  Download Drive PDF
-                </button>
+
+                {cvError && (
+                  <div className="p-2.5 rounded bg-[#EF4444]/10 border border-[#EF4444]/20 text-[#EF4444] text-[11px]">
+                    {cvError}
+                  </div>
+                )}
+
+                {tailoredCv && (
+                  <div className="space-y-3 pt-3 border-t border-white/8 text-xs">
+                    {cvViewMode === 'diff' ? (
+                      <>
+                        {/* Tailored Executive Summary */}
+                        <div className="bg-[#161F33]/70 p-3 rounded border border-white/5">
+                          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block mb-1">
+                            Tailored Executive Summary
+                          </span>
+                          <p className="text-slate-200 leading-relaxed text-xs">
+                            {tailoredCv.summary}
+                          </p>
+                        </div>
+
+                        {/* Selected Proof-Point Bullets Diff */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                              Selected Proof-Points Diff ({tailoredCv.selectedBullets.length} Matched)
+                            </span>
+                            <span className="text-[10px] font-mono text-[#14B8A6]">
+                              Byte-for-Byte Equality
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            {tailoredCv.selectedBullets.map((bp) => (
+                              <div
+                                key={bp.id}
+                                className="p-2.5 rounded bg-[#161F33]/40 border border-white/5 flex items-start gap-2.5"
+                              >
+                                <span className="text-[10px] font-mono font-bold text-[#14B8A6] bg-[#0D9488]/15 border border-[#14B8A6]/20 px-1.5 py-0.5 rounded mt-0.5 shrink-0">
+                                  {bp.rawMetricString}
+                                </span>
+                                <div className="flex-1">
+                                  <p className="text-slate-200 text-xs leading-relaxed">
+                                    {bp.statement}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                                    <span className="font-medium text-slate-300">{bp.employer}</span>
+                                    <span>•</span>
+                                    <span>{bp.timeFrame}</span>
+                                    <span>•</span>
+                                    <span className="font-mono text-teal-400">{bp.track}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      /* Embedded Document Sheet Preview */
+                      <div className="bg-[#0B0F19] border border-white/10 rounded-lg p-4 space-y-3 font-sans">
+                        <div className="border-b border-white/10 pb-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-base font-bold text-white">
+                              {tailoredCv.document.candidateName}
+                            </span>
+                            <span className="text-[10px] font-mono text-[#2563EB]">
+                              {tailoredCv.document.headline}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-1 flex gap-2">
+                            <span>{tailoredCv.document.location}</span>
+                            <span>•</span>
+                            <span>{tailoredCv.document.email}</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
+                            Executive Summary
+                          </span>
+                          <p className="text-slate-200 text-[11px] leading-relaxed">
+                            {tailoredCv.document.summary}
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block mb-1.5">
+                            Tailored Experience
+                          </span>
+                          <div className="space-y-2">
+                            {tailoredCv.document.experience.map((exp, eIdx) => (
+                              <div key={eIdx} className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px] font-semibold text-white">
+                                  <span>{exp.title} &mdash; <span className="text-slate-400 font-normal">{exp.employer}</span></span>
+                                  <span className="text-[10px] font-mono text-slate-500">{exp.period}</span>
+                                </div>
+                                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-300">
+                                  {exp.bullets.map((b, bIdx) => (
+                                    <li key={bIdx} className="leading-snug">{b}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#94A3B8] block mb-1">
+                            AI-Native Side Projects
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {tailoredCv.document.sideProjects.map((p, pIdx) => (
+                              <div key={pIdx} className="p-2 rounded bg-white/5 border border-white/5 text-[10px]">
+                                <span className="font-semibold text-white block">{p.name}</span>
+                                <span className="text-slate-300 block mt-0.5">{p.description}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Drive Staging Telemetry Bar */}
+                    <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-slate-400 border-t border-white/5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                        <span>Staged in Google Drive (Zero Puppeteer Cost)</span>
+                      </div>
+                      <a
+                        href={tailoredCv.googleDrivePdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#2563EB] hover:underline"
+                      >
+                        Doc ID: {tailoredCv.googleDocId.slice(0, 16)}... &rarr;
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

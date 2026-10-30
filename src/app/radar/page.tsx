@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTableKeyboardNav } from '@/components/useTableKeyboardNav';
 import { ThreeDoorsChips } from '@/components/ThreeDoorsChips';
-import { DossierDrawer } from '@/components/dossier/DossierDrawer';
+import { DossierDrawer, DossierJobData } from '@/components/dossier/DossierDrawer';
+import { UniversalIngestModal } from '@/components/ingest/UniversalIngestModal';
 
 export interface RadarJobItem {
   id: string;
@@ -137,8 +138,29 @@ export default function MorningRadarPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [selectedDrawerId, setSelectedDrawerId] = useState<string | null>(null);
+  const [isIngestModalOpen, setIsIngestModalOpen] = useState<boolean>(false);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        const activeEl = document.activeElement;
+        const isInput =
+          activeEl &&
+          (activeEl.tagName === 'INPUT' ||
+            activeEl.tagName === 'TEXTAREA' ||
+            (activeEl as HTMLElement).isContentEditable);
+        if (!isInput) {
+          e.preventDefault();
+          setIsIngestModalOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Filter out SKIPPED roles for active radar display, and match search query
   const visibleJobs = useMemo(() => {
@@ -151,11 +173,19 @@ export default function MorningRadarPage() {
       );
     }
 
-    // Sort descending by fit score
-    list.sort((a, b) => b.fitScore - a.fitScore);
+    // Morning Radar filter: keep user-ingested jobs, plus high-signal roles (fit >= 70 & within 24h)
+    const radarHighSignal = list.filter(
+      (j) => j.id.startsWith('ingest-') || (j.fitScore >= 70 && j.postedHoursAgo <= 24)
+    );
 
-    // Morning Radar filter: fit_score >= 70 & posted within 24 hours
-    const radarHighSignal = list.filter((j) => j.fitScore >= 70 && j.postedHoursAgo <= 24);
+    // Keep newly ingested roles pinned at the top, then sort remainder descending by fit score
+    radarHighSignal.sort((a, b) => {
+      const aIngested = a.id.startsWith('ingest-');
+      const bIngested = b.id.startsWith('ingest-');
+      if (aIngested && !bIngested) return -1;
+      if (!aIngested && bIngested) return 1;
+      return b.fitScore - a.fitScore;
+    });
 
     if (!isExpanded) {
       // Top 20 Capped
@@ -178,17 +208,26 @@ export default function MorningRadarPage() {
     },
     onChooseRole: (rowId) => {
       setJobs((prev) =>
-        prev.map((j) => (j.id === rowId ? { ...j, stage: 'CHOSEN' } : j))
+        prev.map((j) =>
+          j.id === rowId
+            ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
+            : j
+        )
       );
     },
-    isDrawerOpen: !!selectedDrawerId,
+    isModalOpen: isIngestModalOpen,
+    onCloseModal: () => setIsIngestModalOpen(false),
+    isDrawerOpen: Boolean(selectedDrawerId),
     onCloseDrawer: () => setSelectedDrawerId(null),
     searchInputRef
   });
 
   // In-Drawer Rapid Candidate Cycling (Runbook §4.3)
   const selectedJobIndex = visibleJobs.findIndex((j) => j.id === selectedDrawerId);
-  const selectedJob = selectedJobIndex !== -1 ? visibleJobs[selectedJobIndex] : null;
+  const selectedJob =
+    (selectedJobIndex !== -1 ? visibleJobs[selectedJobIndex] : null) ||
+    jobs.find((j) => j.id === selectedDrawerId) ||
+    null;
 
   const handleNavigatePrev = () => {
     if (selectedJobIndex > 0) {
@@ -204,6 +243,26 @@ export default function MorningRadarPage() {
       setSelectedDrawerId(nextJob.id);
       setSelectedIndex(selectedJobIndex + 1);
     }
+  };
+
+  const handleJobIngested = (newJob: DossierJobData) => {
+    const radarItem: RadarJobItem = {
+      id: newJob.id,
+      company: newJob.company,
+      title: newJob.title,
+      fitScore: newJob.fitScore,
+      stage: 'DISCOVERED',
+      location: newJob.location,
+      workplace: newJob.workplace,
+      source: newJob.source,
+      postedHoursAgo: 0,
+      door1: newJob.door1,
+      door2: newJob.door2,
+      door3: newJob.door3
+    };
+    setJobs((prev) => [radarItem, ...prev]);
+    setSelectedDrawerId(newJob.id);
+    setSelectedIndex(0);
   };
 
   return (
@@ -256,6 +315,15 @@ export default function MorningRadarPage() {
               Dense Table
             </button>
           </div>
+
+          {/* Universal Ingest Trigger */}
+          <button
+            onClick={() => setIsIngestModalOpen(true)}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm flex items-center gap-1.5 transition-colors"
+          >
+            <span>+ Add Job</span>
+            <span className="text-[10px] opacity-75 font-mono bg-white/20 px-1 py-0.5 rounded">Shift+I</span>
+          </button>
         </div>
       </div>
 
@@ -310,15 +378,22 @@ export default function MorningRadarPage() {
                     <span className="text-xs font-mono font-medium text-[#94A3B8] uppercase tracking-wider">
                       {job.company}
                     </span>
-                    <span
-                      className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${
-                        job.fitScore >= 70
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
-                      }`}
-                    >
-                      {job.fitScore}% FIT
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {job.stage === 'CHOSEN' && (
+                        <span className="text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          ✓ CHOSEN
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${
+                          job.fitScore >= 70
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
+                        }`}
+                      >
+                        {job.fitScore}% FIT
+                      </span>
+                    </div>
                   </div>
                   <h3 className="text-base font-semibold text-[#F8FAFC] mt-2 line-clamp-2">
                     {job.title}
@@ -360,12 +435,20 @@ export default function MorningRadarPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setJobs((prev) =>
-                            prev.map((j) => (j.id === job.id ? { ...j, stage: 'CHOSEN' } : j))
+                            prev.map((j) =>
+                              j.id === job.id
+                                ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
+                                : j
+                            )
                           );
                         }}
-                        className="px-2 py-0.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded font-medium"
+                        className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
+                          job.stage === 'CHOSEN'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                            : 'bg-blue-600 hover:bg-blue-500 text-white'
+                        }`}
                       >
-                        Choose
+                        {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
                       </button>
                     </div>
                   </div>
@@ -385,7 +468,7 @@ export default function MorningRadarPage() {
                 <th className="py-2.5 px-3">Company</th>
                 <th className="py-2.5 px-3">Job Title</th>
                 <th className="py-2.5 px-3">Location</th>
-                <th className="py-2.5 px-3">Three Doors</th>
+                <th className="py-2.5 px-3">Backdoor</th>
                 <th className="py-2.5 px-3">Source</th>
                 <th className="py-2.5 px-3 text-right">Age</th>
                 <th className="py-2.5 px-3 text-right">Action</th>
@@ -440,16 +523,48 @@ export default function MorningRadarPage() {
                       {job.postedHoursAgo}h
                     </td>
                     <td className="py-2 px-3 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedIndex(idx);
-                          setSelectedDrawerId(job.id);
-                        }}
-                        className="px-2 py-0.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded font-medium border border-white/10 transition-colors"
-                      >
-                        Dossier &rarr;
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedIndex(idx);
+                            setSelectedDrawerId(job.id);
+                          }}
+                          className="px-2 py-0.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded font-medium border border-white/10 transition-colors"
+                        >
+                          Dossier &rarr;
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setJobs((prev) =>
+                              prev.map((j) =>
+                                j.id === job.id
+                                  ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
+                                  : j
+                              )
+                            );
+                          }}
+                          className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
+                            job.stage === 'CHOSEN'
+                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                              : 'bg-blue-600/80 hover:bg-blue-600 text-white'
+                          }`}
+                        >
+                          {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setJobs((prev) =>
+                              prev.map((j) => (j.id === job.id ? { ...j, stage: 'SKIPPED' } : j))
+                            );
+                          }}
+                          className="px-1.5 py-0.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                        >
+                          Skip
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -482,6 +597,13 @@ export default function MorningRadarPage() {
         hasNext={selectedJobIndex < visibleJobs.length - 1}
         currentIndex={selectedJobIndex >= 0 ? selectedJobIndex : 0}
         totalJobs={visibleJobs.length}
+      />
+
+      {/* Universal Ingest Modal (Runbook §4.4) */}
+      <UniversalIngestModal
+        isOpen={isIngestModalOpen}
+        onClose={() => setIsIngestModalOpen(false)}
+        onJobIngested={handleJobIngested}
       />
     </div>
   );
