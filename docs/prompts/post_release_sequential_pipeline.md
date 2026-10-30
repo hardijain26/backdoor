@@ -49,10 +49,12 @@ Execute the following 5 tasks in strict sequential order. Complete each task tho
 ## ⚡ TASK 1: PRODUCTION DEPLOYMENT & TASK AUDIT
 Run this prompt first to verify deliverables and customer impact:
 
-"Audit every task shipped in this PR. Output a self-verification table for me:
-1. Table Columns: | Task Name | Status (Completed/Partial) | Exact Test Step on Preview URL | Self-Verification [ ] |
-2. Operational Stability: In 2 sentences, summarize rollout health, downtime (if any), and system responsiveness in non-technical terms.
-3. Attention Flags: List any partial deliverable that needs follow-up in the next PR."
+"Audit every task shipped in this PR using this exact tabular format:
+1. Master Audit Table:
+   | Task ID & Name | Work Done (%) | Status (Completed/Partial/Carried Forward) | Reasons & Dependencies on Other Sprints | Carry-Forward Target Sprint | Exact Test Step on Preview URL | Self-Verification [ ] |
+2. Carry-Forward Protocol: If any task has dependencies on another sprint or cannot reach 100%, state the exact reason, set the carry-forward target sprint, and flag it to be inserted into the next sprint plan and docs/sprints/sprint_audit_and_completion_report.md.
+3. Operational Stability: In 2 sentences, summarize rollout health, downtime (if any), and system responsiveness in non-technical terms.
+4. Attention Flags: List any partial deliverable that needs follow-up in the next PR."
 
 ---
 

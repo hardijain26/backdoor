@@ -22,16 +22,17 @@ Analyze the input and generate a structured Post-Release Audit & PR Package foll
 - **Executive Summary:** 2–3 plain-English sentences summarizing rollout health, customer impact, and current stability.
 - **Key Milestones:** Planned release date vs. actual completion, downtime (if any), and rollout ramp-up (% of traffic/users reached).
 
-#### 2. 📋 Task-by-Task Audit & Preview Verification
-Audit each task included in this release using the following table:
+#### 2. 📋 Task-by-Task Audit, Dependencies & Carry-Forward Verification
+Audit each task included in this release using the following tabular format:
 
-| Task ID & Name | Scope / User Story | Status | Verification Result | User Preview Link |
-| :--- | :--- | :--- | :--- | :--- |
-| `[TASK-ID]` [Name] | [Brief plain-English scope] | [Completed / Partial / Blocked / Rolled Back] | [Pass / Attention / Failed - explanation] | [Preview / Staging URL](https://...) |
+| Task ID & Name | Scope / User Story | Work Done (%) | Status | Reasons & Dependencies on Other Sprints | Carry-Forward Target Sprint | User Preview Link |
+| :--- | :--- | :---: | :--- | :--- | :---: | :--- |
+| `[TASK-ID]` [Name] | [Brief plain-English scope] | [0–100%] | [Completed / Partial / Blocked / Carried Forward] | [State dependencies or reasons for deferral] | [Sprint N+1 or None] | [Preview Link](https://...) |
 
-For any task marked **Partial**, **Blocked**, or **Rolled Back**:
-- **Why It Happened:** Plain-English explanation of the delay or issue.
-- **Resolution / Next Step:** Plan and timeline for full completion.
+For any task marked **Partial**, **Blocked**, or **Carried Forward**:
+- **Why It Happened:** Plain-English explanation of the blocker, technical reason, or missing external dependency.
+- **Carry-Forward Protocol:** Explicitly document the task in the next sprint plan (`docs/sprints/sprint_[N+1]_plan.md`) and update the Master Audit Report (`docs/sprints/sprint_audit_and_completion_report.md`).
+- **Resolution Plan:** Concrete next steps and timeline to achieve 100% completion in the target sprint.
 
 #### 3. 👥 User Experience & Customer Health
 - **Customer Reception & Adoption:** Early user traffic, successful transactions, or feature uptake in simple terms.

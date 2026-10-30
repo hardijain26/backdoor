@@ -21,6 +21,11 @@ Your objective is to update the active Sprint Plan document (`docs/sprints/sprin
 - **Summary of Changes:** [Brief summary of deliverables]
 - **Live Production Verification Status:** [All checks passed / verified on production]
 - **PM Sign-Off Signature & Date:** [Your Name / Solo Full-Stack PM, Date: YYYY-MM-DD]
+- **Task Carry-Forward Items (if any):**
+  - Task ID: [e.g., S1-T04 partial feature]
+  - Work Done (%): [e.g., 75%]
+  - Reason / Dependency: [e.g., Waiting on Sprint 3 slide-out drawer integration]
+  - Carry-Forward Target Sprint: [e.g., Sprint 3]
 - **Bugs / Defects Encountered (if any):**
   - Defect Title: [Title or 'None']
   - Customer Impact: [What went wrong]
@@ -48,6 +53,10 @@ Update the target sprint plan file (`docs/sprints/sprint_{{SPRINT_NUMBER}}_plan.
 
 4. **Section 8 (Product Manager Documentation Updates Log):**
    - Append checked boxes `[x]` for all documentation files updated during this release cycle.
+
+5. **Master Audit Report Synchronization (`docs/sprints/sprint_audit_and_completion_report.md`):**
+   - If any task was marked as partial, blocked, or dependent on another sprint, update Section 2's master table with the exact `% Work Done`, reason, and designated `Carry-Forward Target Sprint`.
+   - Ensure the carried-forward task is also inserted into Section 2 of the next sprint plan (`docs/sprints/sprint_[N+1]_plan.md`).
 ```
 
 ---
