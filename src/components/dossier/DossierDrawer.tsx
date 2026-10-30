@@ -9,6 +9,7 @@ import {
   stageGmailDraft,
   StagedDraftResult,
 } from '@/engine/cadence';
+import { evaluateTier3Dossier, Tier3SynthesisResult } from '@/engine/tier3-eval';
 
 export interface DossierJobData {
   id: string;
@@ -81,6 +82,17 @@ export function DossierDrawer({
   const [stagingError, setStagingError] = useState<string | null>(null);
   const [optimizeDeliveryWindow, setOptimizeDeliveryWindow] = useState(true);
   const [showDeliveryTooltip, setShowDeliveryTooltip] = useState(false);
+
+  const tier3Result: Tier3SynthesisResult | null = React.useMemo(() => {
+    if (!job) return null;
+    return evaluateTier3Dossier({
+      jobId: job.id,
+      company: job.company,
+      title: job.title,
+      description: job.description,
+      fitScore: job.fitScore,
+    });
+  }, [job]);
 
   useEffect(() => {
     fetch('/api/cadence/quota')
@@ -481,7 +493,8 @@ export function DossierDrawer({
 
           {/* TAB 2: MATCH BREAKDOWN */}
           {activeTab === 'match' && (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* Score Header */}
               <div className="p-4 rounded-lg bg-[#0F1523] border border-white/8 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-slate-400 block mb-0.5">Deterministic Match Score</span>
@@ -495,6 +508,103 @@ export function DossierDrawer({
                 </div>
               </div>
 
+              {/* TIER 3 LLM SYNTHESIS (SCORE >= 70%) */}
+              {tier3Result?.eligible ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
+                      <span>Tier 3 Executive Synthesis & Pitch Strategy</span>
+                    </h4>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono text-sky-400 bg-sky-950/50 border border-sky-800/40">
+                      Grounded in M8 (Score &ge; 70%)
+                    </span>
+                  </div>
+
+                  {/* Strategic Positioning Angle */}
+                  <div className="p-3.5 rounded-lg bg-[#2563EB]/10 border border-[#2563EB]/30 space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#38BDF8]">
+                      <span>🎯 Strategic Positioning Angle</span>
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-[#2563EB]/20 text-white">
+                        {tier3Result.suggestedTrack.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed font-sans">
+                      {tier3Result.strategicPositioningAngle}
+                    </p>
+                  </div>
+
+                  {/* Verified Proof Points Bullets */}
+                  <div className="space-y-2.5">
+                    <div className="text-xs font-semibold text-slate-300">
+                      Tailored Proof Points (Rule R5 Verified Metrics)
+                    </div>
+                    <div className="space-y-2">
+                      {tier3Result.proofBullets.map((bullet) => (
+                        <div
+                          key={bullet.proofPointId}
+                          className="p-3 rounded-lg bg-[#0F1523] border border-white/8 space-y-1.5 hover:border-sky-700/50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-mono text-sky-400 font-bold bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-800/40">
+                              [{bullet.proofPointId.toUpperCase()}]
+                            </span>
+                            <span className="text-slate-400">
+                              {bullet.employer} &bull; <span className="font-mono text-[#10B981] font-semibold">{bullet.metric}</span>
+                            </span>
+                          </div>
+                          <p className="text-xs text-white leading-snug">
+                            {bullet.tailoredBullet}
+                          </p>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                            <span className="text-sky-400 font-bold">&rarr;</span>
+                            <span>{bullet.relevanceReason}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Score Booster Gaps */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-300">
+                      Score Booster Recommendations (&ge; 5 pts potential)
+                    </div>
+                    <div className="space-y-2">
+                      {tier3Result.scoreBoosterGaps.map((gap) => (
+                        <div
+                          key={gap.id}
+                          className="p-3 rounded-lg bg-[#0F1523]/70 border border-sky-900/40 flex items-start justify-between gap-3 text-xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-white">{gap.skillOrArtifact}</span>
+                              <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800/50">
+                                {gap.targetCategory.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-slate-300 text-[11px] leading-relaxed">
+                              {gap.actionableGuidance}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold text-sky-400 bg-sky-950/80 border border-sky-800/60 whitespace-nowrap">
+                            +{gap.pointsPotential} pts
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-lg bg-[#0F1523] border border-white/8 text-xs text-slate-400 space-y-1">
+                  <div className="font-semibold text-slate-300">Tier 3 Executive Synthesis Inactive</div>
+                  <p>
+                    Tier 3 synthesis unlocks for opportunities with a match score of 70% or higher.
+                    Current score is <span className="font-mono text-slate-200">{job.fitScore}%</span> (Exploratory / Stretch tier).
+                  </p>
+                </div>
+              )}
+
+              {/* TIER 2 MATHEMATICAL SCORING FORMULA */}
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] mb-3">
                   Tier 2 Mathematical Scoring Formula (0 AI)
@@ -534,22 +644,6 @@ export function DossierDrawer({
                       <span className="text-slate-400 text-[11px]">Cross-functional executive alignment</span>
                     </div>
                     <span className="font-mono font-bold text-[#10B981]">18 / 20 pts</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] mb-2">
-                  Score Booster Gap Recommendations
-                </h4>
-                <div className="p-3 rounded bg-[#0F1523]/50 border border-white/8 text-xs text-slate-300 space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className="text-[#0284C7] font-bold">•</span>
-                    <span>Highlight specific enterprise ARR expansion metrics in your initial outreach note.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-[#0284C7] font-bold">•</span>
-                    <span>Reference developer platform integrations to close the minor tooling gap.</span>
                   </div>
                 </div>
               </div>
