@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-preflight/
 .env*.local
 .env
 *.wav

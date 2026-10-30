@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Backdoor - Executive PM Job Clipper & Meet Assistant",
+  "version": "1.0.0",
+  "description": "1-click job clipping from LinkedIn, Greenhouse, Lever, and Indeed directly into Backdoor with instant suitability scoring and Google Meet audio capture.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabCapture"
+  ],
+  "host_permissions": [
+    "http://localhost:3001/*",
+    "https://*.linkedin.com/*",
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.workday.com/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://*.indeed.com/*",
+    "https://meet.google.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Clip Job to Backdoor"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.workday.com/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.indeed.com/*"
+      ],
+      "js": ["clipper.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://meet.google.com/*"
+      ],
+      "js": ["audio-capture.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
+

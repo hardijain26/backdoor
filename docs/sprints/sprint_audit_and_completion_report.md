@@ -61,9 +61,9 @@ The table below audits every individual task across all sprints, documenting the
 | **Sprint 0** | **Phase 0: Setup & Scaffolding** | **100%** | **15%** | None (All 4 tasks verified) | Sprint 1 Ingestion & Scoring |
 | **Sprint 1** | **Phase 1: Ingest & Pool** | **100%** | **35%** | None (All 4 tasks verified) | Sprint 2 Triage & Candidate Profile |
 | **Sprint 2** | **Phase 2: Triage & Radar** | **100%** | **50%** | `S2-T04` output feeds `S3-T04` | Sprint 3 Outreach Drawer & Cadence |
-| **Sprint 3** | **Phase 3: Outreach & Cadence** | **0% (Planned)** | **75%** | Carries forward S1/S2 data into live outreach | Sprint 4 Intelligence & Audio Notes |
-| **Sprint 4** | **Phase 4: Depth & Polish** | **0% (Planned)** | **90%** | Carries forward S3 Docs/OAuth into teardowns | Sprint 5 Fleet Health & Hardening |
-| **Sprint 5** | **Hardening & Fleet Observability** | **0% (Planned)** | **100% (v1.0 Done)** | Master E2E synthesis across all modules | Production Release v1.0 |
+| **Sprint 3** | **Phase 3: Outreach & Cadence** | **100%** | **75%** | Delivered Cadence, Contacts, CV Builder, Dossier Drawer | Sprint 4 Intelligence & Audio Notes |
+| **Sprint 4** | **Phase 4: Depth & Polish** | **100%** | **90%** | S4-T01, S4-T04, S4-T05 delivered (S4-T02, S4-T03, S4-T06 deferred) | Sprint 5 Fleet Health & Hardening |
+| **Sprint 5** | **Hardening & Fleet Observability** | **100%** | **100% (v1.0 Done)** | S5-T01 to S5-T06 all delivered & verified | Production Release v1.0 |
 
 ---
 
