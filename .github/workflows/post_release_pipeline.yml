@@ -1,0 +1,84 @@
+name: Post-Release Pipeline Automation
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  trigger-post-release:
+    name: Trigger Sequential Post-Release Pipeline
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - name: Generate Post-Release Package
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const prTitle = pr.title;
+            const prUrl = pr.html_url;
+            const prBody = pr.body || "No PR description provided.";
+            const mergedBy = pr.merged_by ? pr.merged_by.login : "author";
+            const previewUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (pr.head ? `https://${pr.head.ref}.preview.app` : "https://production.app");
+
+            const commentBody = `## 🚀 Post-Release Execution Pipeline Triggered!
+            
+            PR **#${pr.number}: ${prTitle}** was successfully merged into \`main\` and is live.
+
+            As a solo full-stack PM, follow the sequential post-release tasks below or feed the prompt below into your AI copilot.
+
+            ---
+
+            ### 📋 Sequential Post-Release Checklist:
+            - [ ] **Task 1: Production & Task Audit** (Verify preview links & user journeys)
+            - [ ] **Task 2: Documentation Audit** (Sync README / user guides with new code)
+            - [ ] **Task 3: Bug Post-Mortem** (Generate non-technical resolution if glitches occurred)
+            - [ ] **Task 4: Release Notes** (Publish customer changelog)
+            - [ ] **Task 5: Stakeholder Broadcast** (Send chat update & client email)
+
+            ---
+
+            <details>
+            <summary><b>🤖 Click to view Auto-Populated AI Prompt for this Release</b></summary>
+
+            \`\`\`markdown
+            You are my Solo Full-Stack Release Orchestrator and Quality Partner. PR #${pr.number} has just been merged live. Execute the 5 sequential post-release tasks:
+
+            ### RELEASE CONTEXT:
+            - PR Title: ${prTitle}
+            - PR Link: ${prUrl}
+            - Merged By: @${mergedBy}
+            - Preview URL: ${previewUrl}
+            - Description / Changes:
+            ${prBody}
+
+            Execute sequentially:
+            1. TASK 1: PRODUCTION & TASK AUDIT (Create 3-minute test checklist with preview link)
+            2. TASK 2: DOC SYNCHRONIZATION AUDIT (Identify exact doc files/lines needing updates)
+            3. TASK 3: BUG & INCIDENT RESOLUTION (Plain-English non-technical root cause & guardrail)
+            4. TASK 4: VALUE-DRIVEN RELEASE NOTES (Customer-facing changelog with feature links)
+            5. TASK 5: 3-TIER STAKEHOLDER BROADCAST (Slack update, Client email, Leadership one-liner)
+            \`\`\`
+
+            </details>
+
+            *Refer to [\`docs/prompts/post_release_sequential_pipeline.md\`](docs/prompts/post_release_sequential_pipeline.md) for full instructions.*
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: commentBody
+            });
