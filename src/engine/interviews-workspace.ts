@@ -20,6 +20,7 @@ export interface InterviewRoundRecord {
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   scheduledStart: string;
   durationMinutes: number;
+  meetUrl?: string;
   interviewerNames: string[];
   interviewerTitles: string[];
   interviewerEmails: string[];
@@ -56,6 +57,7 @@ const initialInterviews: InterviewRoundRecord[] = [
     status: 'COMPLETED',
     scheduledStart: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
     durationMinutes: 45,
+    meetUrl: 'https://meet.google.com/ant-hro-pic',
     interviewerNames: ['Sarah Chen'],
     interviewerTitles: ['VP of AI Product'],
     interviewerEmails: ['sarah.chen@anthropic.com'],
@@ -119,6 +121,7 @@ const initialInterviews: InterviewRoundRecord[] = [
     status: 'COMPLETED',
     scheduledStart: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(), // Yesterday
     durationMinutes: 30,
+    meetUrl: 'https://meet.google.com/str-ipe-rec',
     interviewerNames: ['Marcus Brody'],
     interviewerTitles: ['Lead Tech Talent Partner'],
     interviewerEmails: ['mbrody@stripe.com'],
@@ -162,6 +165,7 @@ const initialInterviews: InterviewRoundRecord[] = [
     status: 'SCHEDULED',
     scheduledStart: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // In 2 days
     durationMinutes: 60,
+    meetUrl: 'https://meet.google.com/lin-ear-case',
     interviewerNames: ['Tuomas Artman', 'Karri Saarinen'],
     interviewerTitles: ['Co-Founder & CTO', 'CEO'],
     interviewerEmails: ['team@linear.app'],
@@ -324,4 +328,34 @@ export function stageInterviewThankYouDraft(
     draftSubject: payload.subject,
     draftBody: payload.body,
   };
+}
+
+/**
+ * Generate Google Calendar 1-click template scheduling link.
+ */
+export function generateGoogleCalendarUrl(interview: {
+  company: string;
+  roleTitle: string;
+  roundType: string;
+  scheduledStart: string;
+  durationMinutes: number;
+  meetUrl?: string;
+  interviewerNames?: string[];
+}): string {
+  const startDate = new Date(interview.scheduledStart);
+  const endDate = new Date(startDate.getTime() + interview.durationMinutes * 60 * 1000);
+
+  const formatGCalDate = (d: Date) => {
+    return d.toISOString().replace(/-|:|\.\d+/g, '');
+  };
+
+  const title = `${interview.company}: ${interview.roundType.replace('_', ' ')} - ${interview.roleTitle}`;
+  const details = `Interview Round with ${interview.interviewerNames?.join(', ') || interview.company}.\nGoogle Meet: ${interview.meetUrl || 'https://meet.google.com'}\n\nManaged automatically via Backdoor Command Center.`;
+  const location = interview.meetUrl || 'https://meet.google.com';
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+    title
+  )}&dates=${formatGCalDate(startDate)}/${formatGCalDate(endDate)}&details=${encodeURIComponent(
+    details
+  )}&location=${encodeURIComponent(location)}`;
 }

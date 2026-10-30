@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       status: body.status || 'SCHEDULED',
       scheduledStart: body.scheduledStart || new Date().toISOString(),
       durationMinutes: Number(body.durationMinutes) || 45,
+      meetUrl: body.meetUrl || 'https://meet.google.com/new',
       interviewerNames: Array.isArray(body.interviewerNames) ? body.interviewerNames : ['Interviewer'],
       interviewerTitles: Array.isArray(body.interviewerTitles) ? body.interviewerTitles : ['Hiring Team'],
       interviewerEmails: Array.isArray(body.interviewerEmails) ? body.interviewerEmails : [],

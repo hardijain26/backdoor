@@ -114,3 +114,13 @@ test('IT-INT-05: Rule R7 Color Blacklist Audit across Interview Intelligence Sub
     }
   }
 });
+
+test('IT-INT-06: Google Meet & 1-Click Google Calendar integration links', () => {
+  resetInterviewsWorkspace();
+  const html = renderToString(<InterviewsPage />);
+
+  assert.ok(html.includes('Join Google Meet'));
+  assert.ok(html.includes('Add to Google Calendar'));
+  assert.ok(html.includes('Schedule Round'));
+  assert.ok(html.includes('calendar.google.com/calendar/render'));
+});
