@@ -7,12 +7,12 @@ export interface ThreeDoorsChipsProps {
 }
 
 /**
- * Three Doors Segmented Indicator Chips (Runbook §3.6)
+ * Backdoor Segmented Indicator Chips (Runbook §3.6)
  * Rendered on Bento Cards and table rows to provide instant Door telemetry.
  */
 export function ThreeDoorsChips({ door1, door2, door3 }: ThreeDoorsChipsProps) {
   return (
-    <div className="inline-flex items-center gap-1.5 flex-wrap" aria-label="Discovered Doors">
+    <div className="inline-flex items-center gap-1.5 flex-wrap" aria-label="Backdoor Contacts">
       {/* Door 1: Hiring Manager / Founder */}
       {door1 ? (
         <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-[#161F33] text-teal-400 border border-teal-500/20 flex items-center gap-1">

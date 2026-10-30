@@ -71,6 +71,11 @@ export function handleTableKeyDown(e: KeyboardEvent, {
     return;
   }
 
+  // When a modal or drawer is active, suppress background table triage shortcuts
+  if (isModalOpen || isDrawerOpen) {
+    return;
+  }
+
   const totalRows = rows.length;
   if (totalRows === 0) return;
 

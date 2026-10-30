@@ -212,7 +212,7 @@ export function DossierDrawer({
               { key: 'spec', label: '1. Spec' },
               { key: 'match', label: '2. Match' },
               { key: 'intel', label: '3. Intel' },
-              { key: 'doors', label: '4. Three Doors' },
+              { key: 'doors', label: '4. Backdoor' },
               { key: 'draft', label: '5. Outreach & CV' }
             ] as { key: DossierTab; label: string }[]
           ).map((tab) => (
@@ -435,7 +435,7 @@ export function DossierDrawer({
             </div>
           )}
 
-          {/* TAB 4: THREE DOORS */}
+          {/* TAB 4: BACKDOOR */}
           {activeTab === 'doors' && (
             <div className="space-y-4">
               <p className="text-xs text-slate-400">
@@ -643,11 +643,11 @@ export function DossierDrawer({
                   >
                     {draftStaged ? (
                       <span className="text-[#10B981] font-semibold">
-                        ✓ Staged in ThreeDoors/Drafts (Rule R1: Zero sends)
+                        ✓ Staged in Backdoor/Drafts (Rule R1: Zero sends)
                       </span>
                     ) : (
                       <>
-                        <span>Stage Draft in Gmail (`ThreeDoors/Drafts`)</span>
+                        <span>Stage Draft in Gmail (`Backdoor/Drafts`)</span>
                       </>
                     )}
                   </button>

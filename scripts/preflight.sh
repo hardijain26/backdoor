@@ -37,7 +37,11 @@ else
 fi
 
 echo "=== [GATE 7/7] Next.js Production Build Verification ==="
-NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://placeholder.supabase.co}" NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}" npm run build
+NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://placeholder.supabase.co}" \
+NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}" \
+NEXT_DIST_DIR=".next-preflight" \
+npm run build
+rm -rf .next-preflight
 
 echo "================================================================="
 echo ">>> ALL PREFLIGHT GATES PASSED. COMMIT AUTHORIZED. <<<"
