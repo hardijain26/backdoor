@@ -1,0 +1,102 @@
+name: Update Sprint Findings
+
+on:
+  workflow_dispatch:
+    inputs:
+      sprint:
+        description: 'Sprint number to update (e.g., 1)'
+        required: true
+        default: '1'
+      pr_number:
+        description: 'PR number just released (e.g., 12)'
+        required: false
+        default: ''
+      merge_commit:
+        description: 'Merge commit short hash'
+        required: false
+        default: ''
+      pm_name:
+        description: 'Product Manager Signature'
+        required: false
+        default: 'Solo Full-Stack PM'
+      defect_title:
+        description: 'Defect title (leave blank if none)'
+        required: false
+        default: ''
+      doc_updated:
+        description: 'Documentation file updated'
+        required: false
+        default: ''
+
+  issue_comment:
+    types: [created]
+
+jobs:
+  sync-sprint-findings:
+    name: Sync Post-Release Findings to Sprint Plan
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/update-sprint'))
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Determine Parameters & Update Sprint Plan
+        id: update_sprint
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node scripts/update-sprint-findings.js \
+              --sprint "${{ github.event.inputs.sprint }}" \
+              --pr "${{ github.event.inputs.pr_number }}" \
+              --mergeCommit "${{ github.event.inputs.merge_commit }}" \
+              --pmName "${{ github.event.inputs.pm_name }}" \
+              --defectTitle "${{ github.event.inputs.defect_title }}" \
+              --docUpdated "${{ github.event.inputs.doc_updated }}"
+          else
+            # Triggered via /update-sprint comment on PR
+            PR_NUM="${{ github.event.issue.number }}"
+            COMMIT_HASH=$(git log -1 --format="%h")
+            node scripts/update-sprint-findings.js \
+              --sprint "1" \
+              --pr "$PR_NUM" \
+              --mergeCommit "$COMMIT_HASH" \
+              --pmName "${{ github.event.comment.user.login }}"
+          fi
+
+      - name: Commit and Push Sprint Updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/sprints/
+          if git diff --staged --quiet; then
+            echo "No changes in sprint plan."
+          else
+            git commit -m "docs(sprint): sync post-release audit findings and PM sign-off"
+            git push origin main
+          fi
+
+      - name: Confirm Update via Comment
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "✅ **Sprint Plan Updated!** Post-release audit findings, PM verification sign-off, and commit log have been recorded in \`docs/sprints/\` on \`main\`."
+            });

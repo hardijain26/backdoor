@@ -46,6 +46,7 @@ jobs:
             - [ ] **Task 3: Bug Post-Mortem** (Generate non-technical resolution if glitches occurred)
             - [ ] **Task 4: Release Notes** (Publish customer changelog)
             - [ ] **Task 5: Stakeholder Broadcast** (Send chat update & client email)
+            - [ ] **Task 6: Update Sprint Findings** (Reply \`/update-sprint\` in this thread to record findings in active sprint plan)
 
             ---
 
