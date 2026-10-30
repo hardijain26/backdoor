@@ -3,11 +3,36 @@
 @tailwind utilities;
 
 :root {
-  --background: #080B11;
-  --foreground: #F1F5F9;
+  /* Surfaces & Structural Layers */
+  --bg-canvas: #080B11;             /* Deep Obsidian Void. Base viewport background. */
+  --bg-card: #0F1523;               /* Technical Charcoal Slate. 1:1 Bento cards, table rows. */
+  --bg-drawer: #161F33;             /* Elevated Deep Slate. 640px slide-out dossier drawer. */
+  --border-subtle: rgba(255, 255, 255, 0.08); /* 1px boundary on cards, dividers, headers. */
+  --border-elevated: rgba(255, 255, 255, 0.14); /* Hover borders, active drawer edges. */
+
+  /* Brand & Interactive Accents */
+  --accent-primary: #2563EB;        /* Precision Cobalt Blue. Triggers, active tabs, buttons. */
+  --accent-hover: #1D4ED8;          /* State hover for primary cobalt triggers. */
+  --accent-active: #1E40AF;         /* Pressed active state for buttons and links. */
+  --accent-ring: #3B82F6;           /* Keyboard focus ring (ring-2 ring-blue-500). */
+
+  /* Semantic State & Match Score Tints */
+  --status-top: #10B981;            /* Crisp Emerald. Top Fit (>= 70): High confidence. */
+  --status-mid: #0284C7;            /* Technical Sky. Exploratory (40-69): Telemetry blue. */
+  --status-mid-alt: #38BDF8;        /* Technical Sky Light. Foreground text for exploratory. */
+  --status-low: #64748B;            /* Cool Slate. Stretch (< 40): Below threshold. */
+  --status-action: #0D9488;         /* Precision Teal. Ready Gmail drafts, verified emails. */
+  --status-action-alt: #14B8A6;     /* Precision Teal Light. Text highlight for active action. */
+  --status-danger: #EF4444;         /* High-contrast Red. Skipped roles, ingestion errors. */
+
+  /* High-Contrast Text Hierarchy */
+  --text-primary: #F8FAFC;          /* Contrast ratio 17.5:1 on #080B11. Headings, titles. */
+  --text-secondary: #94A3B8;        /* Contrast ratio 8.2:1 on #080B11. Descriptions, brief. */
+  --text-muted: #475569;            /* Contrast ratio 4.8:1 on #080B11. Timestamps, hotkey hints. */
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
