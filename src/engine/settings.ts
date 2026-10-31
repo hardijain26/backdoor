@@ -5,6 +5,7 @@
  */
 
 import crypto from 'crypto';
+import { AUTHORIZED_GOOGLE_OAUTH_SCOPES } from './google-auth';
 import { resolveSenderTimezone, SenderLocationInput } from './cadence';
 import { VERIFIED_SOURCES, SourceDefinition } from './scraper';
 import { getFleetHealthSummary, toggleSourceEnabled } from './fleet-health';
@@ -79,7 +80,7 @@ let settingsState: SettingsWorkspaceState = {
   googleOAuth: {
     connected: true,
     email: 'hardi.jain@backdoor.ai',
-    scopes: ['https://www.googleapis.com/auth/gmail.compose', 'https://www.googleapis.com/auth/drive.file'],
+    scopes: [...AUTHORIZED_GOOGLE_OAUTH_SCOPES],
     expiresInHours: 144,
     tokenStatus: 'ACTIVE',
     lastRefreshedAt: '2026-10-30T10:00:00.000Z',
@@ -472,7 +473,7 @@ export function resetSettingsStore(): void {
     googleOAuth: {
       connected: true,
       email: 'hardi.jain@backdoor.ai',
-      scopes: ['https://www.googleapis.com/auth/gmail.compose', 'https://www.googleapis.com/auth/drive.file'],
+      scopes: [...AUTHORIZED_GOOGLE_OAUTH_SCOPES],
       expiresInHours: 144,
       tokenStatus: 'ACTIVE',
       lastRefreshedAt: '2026-10-30T10:00:00.000Z',

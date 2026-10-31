@@ -43,7 +43,7 @@
 3. **Sub-10-Minute Outreach Pipeline:** Total time from discovering a role to a reviewed, scheduled Gmail draft is under 10 minutes.
 4. **Human-in-the-Loop Safety & Zero Spam:** Zero emails leave Gmail without the candidate manually clicking Send in Gmail. Zero logged-in LinkedIn bot scraping or account risks.
 5. **Zero Running Cost Baseline:** Operating infrastructure runs strictly on free tiers and public endpoints ($0.00/month) with optional BYOK keys for power features.
-6. **Continuous Downstream Data Portability:** All active roles, outreach cadences, contacts, and interview action items automatically mirror to a personal Google Sheet for offline ownership.
+6. ~~**Continuous Downstream Data Portability:** All active roles, outreach cadences, contacts, and interview action items automatically mirror to a personal Google Sheet for offline ownership.~~ **Data Sovereignty & Standardized Inbound Ingestion:** Eliminate outbound/downstream Google Sheet mirroring to prevent offline data harvesting and protect proprietary platform intelligence. Enable standardized, guarded inbound bulk upload (.csv/.xlsx) directly into the platform pipeline.
 
 ### 1.4 Non-Goals
 *   No auto-apply to ATS web forms (burns recruiter goodwill; contradicts the direct referral thesis).
@@ -87,7 +87,7 @@ Every module requirement and automated background job must strictly follow these
 2. **Contact Selection:** Reviews Door 1 (Hiring Manager), Door 2 (Recruiter), and Door 3 (Peer).
 3. **Start Outreach:** Hardi clicks **"Start Outreach"**:
    * Module 4 clones the master Google Doc template, injects tailored proof points, and exports a zero-cost PDF to Google Drive.
-   * Module 7 resolves the recipient's office timezone, calculates the optimal 09:15 AM recipient working-hours window (Tue–Thu), and converts it primarily to the **sender's local timezone** (e.g., *"Tue 14:45 IST (09:15 London local)"*). Provides an in-drawer checkbox to toggle optimization with an explanatory tooltip, and stages a draft in Gmail under `Backdoor/Drafts`.
+   * Module 7 computes the recipient's office timezone and generates a draft in Gmail under `Backdoor/Drafts` with a suggested send time (e.g., *"Tue 09:15 London (14:45 IST)"*).
    * Module 7 formats a customized $\le 300$-character LinkedIn connection note.
 
 ### Journey 3: Review, Send & Thread Cadence
@@ -102,7 +102,7 @@ Every module requirement and automated background job must strictly follow these
 1. Hardi joins a Google Meet interview.
 2. The Chrome clipper extension captures the Meet tab audio (with participants informed).
 3. Post-call, the audio is transcribed via Groq's free Whisper API and parsed into **My Actions**, **Their Actions**, and **Next Steps**.
-4. Action items are saved to Supabase `meeting_notes` and mirrored to the candidate's Google Sheet. Module 7 stages a thank-you email draft within 2 hours.
+4. Action items are saved to Supabase `meeting_notes` ~~and mirrored to the candidate's Google Sheet~~ (persisted strictly to internal Supabase PostgreSQL; outbound Google Sheet sync eliminated). Module 7 stages a thank-you email draft within 2 hours.
 
 ---
 
@@ -134,7 +134,7 @@ Every module requirement and automated background job must strictly follow these
 *   **Authentication & Session Management:** Built natively on Supabase Auth.
 *   **Primary System of Record:** PostgreSQL 16 schema.
 *   **Audit Logging:** Append-only event store (`decision_events`).
-*   **Portability:** Downstream Google Sheet sync worker.
+*   ~~**Portability:** Downstream Google Sheet sync worker.~~ **Data Sovereignty & Boundary Control:** Strict internal data persistence in Supabase PostgreSQL; downstream Google Sheet synchronization is permanently eliminated to prevent offline harvesting and protect proprietary platform intelligence.
 
 #### 2. Detailed Functional Requirements
 *   **M1-FR1 (P0) Authentication & Sessions:**
@@ -149,9 +149,10 @@ Every module requirement and automated background job must strictly follow these
     *   PostgreSQL security rule: `REVOKE UPDATE, DELETE ON public.decision_events FROM PUBLIC, authenticated, anon;`.
 *   **M1-FR4 (P0) Source Provenance Tracking:**
     *   `job_sources` maintains a full historical audit trail for every URL where a job is listed, recording raw payloads, first seen, last seen, and confidence ratings.
-*   **M1-FR5 (P0) Downstream Data Portability & Mirroring:**
-    *   An asynchronous worker writes daily sync batches to a connected Google Sheet across four dedicated tabs: *Daily PM Roles*, *Outreach*, *Contacts*, and *Meetings*.
-    *   One-way synchronization: writes originate exclusively from the app database to ensure zero cell collision or race conditions. The only inbound sheet reading is an isolated `Paste Links` inbox tab monitored by Module 2.
+*   ~~**M1-FR5 (P0) Downstream Data Portability & Mirroring:**~~
+    *   ~~An asynchronous worker writes daily sync batches to a connected Google Sheet across four dedicated tabs: *Daily PM Roles*, *Outreach*, *Contacts*, and *Meetings*.~~
+    *   ~~One-way synchronization: writes originate exclusively from the app database to ensure zero cell collision or race conditions. The only inbound sheet reading is an isolated `Paste Links` inbox tab monitored by Module 2.~~
+    *   **DEPRECATED & ELIMINATED (Sprint 6 Hardening):** Outbound Google Sheet mirroring has been permanently decommissioned to safeguard proprietary platform intelligence, evaluation algorithms, and pipeline heuristics from offline harvesting. Replaced by M2-FR14 Standardized Inbound Bulk Upload Pipeline.
 *   **M1-FR6 (P0) Clean Bootstrap & Seed Initialization:**
     *   Database initializes from ground zero via clean idempotent DDL scripts.
     *   System seeds essential operational rows out of the box: default system sources (M2 catalogue), baseline tracks (*AI-Native PM*, *Growth PM*, *UX PM*), and default user configuration. Zero external ETL or legacy migration scripts required.
@@ -159,7 +160,7 @@ Every module requirement and automated background job must strictly follow these
 #### 3. Edge Cases & Fallback Strategies
 *   **Supabase Free-Tier Pausing (7 Days Idle):** The automated daily 04:00 AM GitHub Action cron pings the database via API, keeping the database permanently active.
 *   **Database Connection Saturation:** Connection pooling enabled via Supabase Transaction Pooler (PgBouncer) on port 6543.
-*   **Sheet API Quota Exhaustion (429 Rate Limit):** The mirror writer queues updates in BullMQ/Redis and uses exponential backoff with batch updates capped at 50 rows per batch.
+*   ~~**Sheet API Quota Exhaustion (429 Rate Limit):** The mirror writer queues updates in BullMQ/Redis and uses exponential backoff with batch updates capped at 50 rows per batch.~~ *(Eliminated: Outbound Google Sheet sync queues and Sheet API 429 handlers removed following downstream mirror decommissioning).*
 
 ---
 
@@ -194,6 +195,19 @@ Every module requirement and automated background job must strictly follow these
 *   **M2-FR13 (P1) Inbound Webhooks (Naukri & Google Alerts):**
     *   User forwards job alerts to `jobs+<uid>@inbound.<domain>`.
     *   Cloudflare Email Routing + Worker extracts subject, body, unwraps Google redirect URLs, and posts to `/api/webhooks/inbound-mail`.
+*   **M2-FR14 (P0) Standardized Inbound Bulk Upload Pipeline (.csv & .xlsx):**
+    *   *Standardized 6-Column Schema:* Dedicated inbound ingestion pipeline accepting `.csv` (RFC 4180) and `.xlsx` files adhering strictly to 6 canonical columns:
+        1. `company_name` (string, required, normalized)
+        2. `job_title` (string, required, normalized)
+        3. `apply_url` (valid HTTP/HTTPS URL, required)
+        4. `location` (string, required, geographic location)
+        5. `workplace_type` (enum, required: `remote` | `hybrid` | `on-site`)
+        6. `raw_description` (text, required, clean job description text)
+    *   *Guardrails & Rate Caps:* Hard cap of **50 rows per upload** to prevent batch abuse, quota exhaustion, and unmonitored mass ingestion. Files exceeding 50 data rows are rejected atomically.
+    *   *Pre-Validation Error Feedback:* Validates schema, headers, required values, and enum values prior to database insertion. Returns granular error array `{ row: number, column: string, message: string }` if validation fails.
+    *   *Canonical Deduplication:* Evaluates match key `dedup_match_key = normalized_company + normalized_title`. Merges new URLs/locations into existing job entities or creates new `jobs` with `source = 'bulk_upload'`.
+    *   *Immediate Module 3 Pass-Through:* Ingested rows bypass long scraping queues and immediately enter Module 3 deterministic scoring (Tiers 1 and 2), populating fit scores in $< 500\text{ ms}$.
+    *   *Template Download Endpoint:* Serves a downloadable standardized 6-column CSV/XLSX template via `GET /api/ingest/template` with header definitions and sample valid row.
 
 #### 3. Edge Cases & Fallback Strategies
 *   **Target Company Changes ATS Board:** Old board returns 404 $\to$ flagged on Source Health dashboard. When Hardi pastes a new link from that company, the system auto-detects the new ATS platform and updates the company's crawler configuration.
@@ -245,7 +259,7 @@ Every module requirement and automated background job must strictly follow these
 
 #### 2. Detailed Functional Requirements
 *   **M4-FR1 (P0) Scoped Google Authentication:**
-    *   Scopes requested: `documents`, `drive.file`, `spreadsheets`, `calendar.events`, `gmail.compose`, and `gmail.readonly`.
+    *   Scopes requested: `documents`, `drive.file`, ~~`spreadsheets`~~, `calendar.events`, `gmail.compose`, and `gmail.readonly`. *(Note: `spreadsheets` scope is permanently revoked from Google OAuth requirements to prevent external sheet access).*
     *   **Strict Security:** Never requests `gmail.send`. Tokens are encrypted at rest with AES-GCM.
 *   **M4-FR2 (P0) Resume Bullets Bank:**
     *   Central repository of verified resume bullets tagged by skill, track, and metrics.
@@ -261,7 +275,7 @@ Every module requirement and automated background job must strictly follow these
 *   **M4-FR9 (P1) Google Meet Tab Audio Capture & Groq Whisper:**
     *   Chrome extension captures tab audio in 10-minute WAV chunks (participants notified prior).
     *   Sends chunks to Groq's free Whisper API (`whisper-large-v3-turbo`).
-    *   Parses transcript into **My Actions**, **Their Actions**, and **Next Steps**, storing them in `meeting_notes` and appending to the Google Sheet.
+    *   Parses transcript into **My Actions**, **Their Actions**, and **Next Steps**, storing them in `meeting_notes` ~~and appending to the Google Sheet~~ *(Downstream Google Sheet appending permanently decommissioned; notes stored exclusively in PostgreSQL `meeting_notes`)*.
 
 #### 3. Edge Cases & Fallback Strategies
 *   **Google OAuth Token Revocation:** If token refresh fails, M9 displays an amber warning banner: *"Google disconnected — Re-authenticate in Settings"*. All background jobs continue without crashing.
@@ -301,7 +315,7 @@ Every module requirement and automated background job must strictly follow these
 
 ---
 
-### M6 people/enrichment: Contact Discovery (The Three Entry Doors)
+### M6 people/enrichment: Contact Discovery (The Three Entry Pathways)
 
 #### 1. Scope & Ownership
 *   Identifies Door 1 (Hiring Manager), Door 2 (Recruiter), and Door 3 (Peer/Ex-Employee).
@@ -346,12 +360,9 @@ Every module requirement and automated background job must strictly follow these
     *   *Door 2 Draft:* Headcount/role fit summary with attached tailored PDF resume.
     *   *Door 3 Draft:* Peer-to-peer technical question and referral request.
     *   **No automated signature:** System leaves bottom clear; user's default Gmail signature applies.
-*   **M7-FR3 (P0) Universal Recipient Timezone Scheduling & Sender-Primary Dispatch Nudge:**
-    *   Resolves contact's office timezone from city, job location, or company HQ across global hubs (London, SF, NYC, Berlin, Tokyo, etc.).
-    *   Targets delivery Tuesday through Thursday at **09:15 AM recipient local time** (peak executive open window post-inbox triage).
-    *   **Sender-Primary Display:** The primary schedule timestamp presented to the candidate is converted to the **sender's local timezone** (e.g. for an Indian sender targeting a UK role: *"Tue 14:45 IST (09:15 London local)"*), because the sender configures Gmail's Schedule Send according to their own local clock.
-    *   **Universal Multi-Region Logic:** Candidate's home timezone is resolved universally from their configured Country and State/Province in `/settings` (with browser `Intl.DateTimeFormat` timezone detection as automatic initial default).
-    *   **User Optimization Checkbox & Education Tooltip:** In-drawer toggle `[✓] Optimize dispatch for recipient business hours` with an interactive educational tooltip explaining the 3.8× response rate window and clarifying that Backdoor never auto-sends emails (Rule R1: candidate uses Gmail Web "Schedule send").
+*   **M7-FR3 (P0) Recipient Timezone Scheduling:**
+    *   Resolves contact's office timezone from city, job location, or company HQ.
+    *   Recommends sending Tuesday through Thursday at **09:15 AM recipient local time**, displaying Hardi's equivalent time (e.g., *"Tue 09:15 London (14:45 IST)"*).
 *   **M7-FR4 (P0) Sent Detection:**
     *   Thread watcher checks Gmail thread; when a message carries `SENT` label, step status advances to `SENT` with timestamp recorded.
 *   **M7-FR5 (P0) Automated Follow-Up Drafts:**
@@ -431,7 +442,16 @@ Every module requirement and automated background job must strictly follow these
 *   **M9-FR9 (P0) Source Health Dashboard:**
     *   Live status, latency, error strings, and 7-day volume graphs for all 35 sources.
 *   **M9-FR12 (P1) Pacing & Well-Being Aids:**
-    *   Dismissible break reminder after 45 minutes of continuous use; soft warning when starting more than 5 out多年reach cadences in a single day.
+    *   Dismissible break reminder after 45 minutes of continuous use; soft warning when starting more than 5 outreach cadences in a single day.
+*   **M9-FR13 (P0) "Import Opportunities" Modal Specification:**
+    *   *Modal Trigger:* Top navigation bar / command toolbar "Import Opportunities" button.
+    *   *Drag-and-Drop Uploader:* Responsive dropzone accepting `.csv` and `.xlsx` files with immediate client-side format and size verification.
+    *   *Standardized Template Action:* One-click "Download Template" button invoking `GET /api/ingest/template`.
+    *   *Batch Guardrail Badge:* Prominent visual badge enforcing "Max 50 roles per batch".
+    *   *Pre-Import Validation Error Table:* Interactive preview table rendering exact row numbers, field names, and validation failure reasons if invalid columns, missing required cells, or invalid workplace types are detected.
+    *   *Immediate Pipeline Refresh:* Upon successful upload, triggers M3 scoring and performs an optimistic, non-reloading update to the Morning Radar and Dense Command Table.
+*   ~~**Google Sheet UI Indicators & Widgets:**~~
+    *   ~~Google Sheet sync status indicator, "Sync to Sheet Now" action button, and external Google Sheet link widgets on `/health` and command workspace headers are permanently eliminated.~~
 
 #### 3. Edge Cases & Fallback Strategies
 *   **Slow Network / API Latency:** Drawer renders instant optimistic skeletons while fetching deep company teardown data asynchronously.
@@ -468,8 +488,8 @@ Monitored via `sources` and `source_runs` tables in Supabase:
 | Phase | Scope | Hard Gate to Advance |
 | :--- | :--- | :--- |
 | **Phase 0: Setup** | Repo initialization, Supabase DB, Next.js 15 scaffolding. | The DDL applies cleanly to Supabase; empty app deploys. |
-| **Phase 1: Ingest & Pool** | 35-Source Ingestion engine, deduplication, Sheet mirror worker. | **14 consecutive days of scheduled 04:00 AM runs:** Zero fatal ingest errors across enabled sources; deduplication precision $\ge 98\%$; 0 false closures in a 20-role spot check. |
-| **Phase 2: Triage** | M8 tracks/proof points, M3 Tiers 1 & 2 scoring, M9 Morning Radar and Dense Table (`j`/`k`). | Hardi completes a full morning triage in the new web UI without touching Google Sheets. |
+| **Phase 1: Ingest & Pool** | 35-Source Ingestion engine, deduplication, ~~Sheet mirror worker~~ Standardized Inbound Bulk Upload Pipeline (.csv/.xlsx). | **14 consecutive days of scheduled 04:00 AM runs:** Zero fatal ingest errors across enabled sources; deduplication precision $\ge 98\%$; bulk upload verified with 50-row guardrail; 0 false closures in a 20-role spot check. |
+| **Phase 2: Triage** | M8 tracks/proof points, M3 Tiers 1 & 2 scoring, M9 Morning Radar and Dense Table (`j`/`k`). | Hardi completes a full morning triage in the new web UI ~~without touching Google Sheets~~ with zero external spreadsheet dependencies. |
 | **Phase 3: Reach Out** | M4 CV builder and PDF export, M6 Doors 1/2/3 contacts, M7 Gmail drafts. | **5 real outreach cadences completed end-to-end** with 0 automated sends and 100% human-verified dispatches. |
 | **Phase 4: Depth** | M3 Tier 3 Dossier, M5 Teardown Docs, M4 Groq Whisper Meet notes, M9 Copilot panel. | 5 product teardowns rated useful; Groq Whisper Meet notes operational; Week-8 reply metrics read. |
 

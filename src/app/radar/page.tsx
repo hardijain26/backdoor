@@ -5,6 +5,7 @@ import { useTableKeyboardNav } from '@/components/useTableKeyboardNav';
 import { ThreeDoorsChips } from '@/components/ThreeDoorsChips';
 import { DossierDrawer, DossierJobData } from '@/components/dossier/DossierDrawer';
 import { UniversalIngestModal } from '@/components/ingest/UniversalIngestModal';
+import { ImportModal } from '@/components/ingest/ImportModal';
 
 export interface RadarJobItem {
   id: string;
@@ -139,6 +140,8 @@ export default function MorningRadarPage() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [selectedDrawerId, setSelectedDrawerId] = useState<string | null>(null);
   const [isIngestModalOpen, setIsIngestModalOpen] = useState<boolean>(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [bulkToast, setBulkToast] = useState<string | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -175,13 +178,13 @@ export default function MorningRadarPage() {
 
     // Morning Radar filter: keep user-ingested jobs, plus high-signal roles (fit >= 70 & within 24h)
     const radarHighSignal = list.filter(
-      (j) => j.id.startsWith('ingest-') || (j.fitScore >= 70 && j.postedHoursAgo <= 24)
+      (j) => j.id.startsWith('ingest-') || j.id.startsWith('bulk-') || (j.fitScore >= 70 && j.postedHoursAgo <= 24)
     );
 
     // Keep newly ingested roles pinned at the top, then sort remainder descending by fit score
     radarHighSignal.sort((a, b) => {
-      const aIngested = a.id.startsWith('ingest-');
-      const bIngested = b.id.startsWith('ingest-');
+      const aIngested = a.id.startsWith('ingest-') || a.id.startsWith('bulk-');
+      const bIngested = b.id.startsWith('ingest-') || b.id.startsWith('bulk-');
       if (aIngested && !bIngested) return -1;
       if (!aIngested && bIngested) return 1;
       return b.fitScore - a.fitScore;
@@ -265,6 +268,32 @@ export default function MorningRadarPage() {
     setSelectedIndex(0);
   };
 
+  const handleBulkImportSuccess = (importedJobs: any[], toastMsg: string) => {
+    setBulkToast(toastMsg);
+    if (importedJobs.length > 0) {
+      const mapped: RadarJobItem[] = importedJobs.map((j) => ({
+        id: j.id,
+        company: j.company,
+        title: j.title,
+        fitScore: j.fitScore,
+        stage: 'DISCOVERED',
+        location: j.location,
+        workplace: j.workplace,
+        source: j.source,
+        postedHoursAgo: 0,
+        door1: j.door1,
+        door2: j.door2,
+        door3: j.door3,
+      }));
+      setJobs((prev) => [...mapped, ...prev]);
+      if (mapped.length > 0) {
+        setSelectedDrawerId(mapped[0].id);
+        setSelectedIndex(0);
+      }
+    }
+    setTimeout(() => setBulkToast(null), 5000);
+  };
+
   return (
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC] p-6 lg:p-8 font-sans">
       {/* Header Bar */}
@@ -315,6 +344,15 @@ export default function MorningRadarPage() {
               Dense Table
             </button>
           </div>
+
+          {/* Inbound Bulk Import Trigger */}
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#0F1523] hover:bg-[#161F33] text-sky-400 border border-sky-500/30 shadow-sm flex items-center gap-1.5 transition-colors"
+            title="Import opportunities via CSV or XLSX"
+          >
+            <span>📥 Import</span>
+          </button>
 
           {/* Universal Ingest Trigger */}
           <button
@@ -605,6 +643,27 @@ export default function MorningRadarPage() {
         onClose={() => setIsIngestModalOpen(false)}
         onJobIngested={handleJobIngested}
       />
+
+      {/* Inbound Bulk Import Modal (M2-FR14 / M9-FR13) */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onUploadSuccess={handleBulkImportSuccess}
+      />
+
+      {/* Global Ingestion Toast Notification */}
+      {bulkToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-slate-900 border border-sky-500/40 text-sky-400 text-xs font-mono shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <span className="text-base font-bold text-emerald-400">✓</span>
+          <span>{bulkToast}</span>
+          <button
+            onClick={() => setBulkToast(null)}
+            className="ml-2 text-slate-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

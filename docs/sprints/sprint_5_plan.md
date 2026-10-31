@@ -18,7 +18,7 @@
 | `S5-T01` | 35-Source Fleet Health & Observability Dashboard (`/health`) | Telemetry collector from `sources` & `source_runs`, manual test runner API | 35-source matrix, status pills, 7-day sparklines, raw error traces, Radar banner | `COMPLETED` | Fullstack Lead |
 | `S5-T02` | Encrypted Settings Workspace & BYOK Key Vault (`/settings`) | AES-256 / pgcrypto secrets vault, negative filter regex engine, OAuth refresher | Tabbed settings UI, source toggles (1–35), masked BYOK vault, OAuth status pill | `COMPLETED` | Fullstack Lead |
 | `S5-T03` | Chrome Extension Job Clipper (`extension/clipper.js`) | Authenticated clipper ingest endpoint (`/api/ingest/universal`), instant scoring | Content script DOM extractors (LinkedIn, Greenhouse, Lever, etc.), 1-click popup UI | `COMPLETED` | Extension Lead |
-| `S5-T04` | Asynchronous Google Sheet Mirroring Worker & Audit Telemetry | Batch sync worker with exponential backoff, conversion funnel telemetry calculator | Telemetry conversion chart on `/health`, manual "Sync Now" CTA button | `COMPLETED` | Fullstack Lead |
+| `S5-T04` | ~~Asynchronous Google Sheet Mirroring Worker & Audit Telemetry~~ **DEPRECATED (Replaced by Inbound Bulk Upload & Telemetry)** | ~~Batch sync worker with exponential backoff~~, conversion funnel telemetry calculator | Telemetry conversion chart on `/health`, ~~manual "Sync Now" CTA button~~ | `DEPRECATED / SUPERSEDED` | Fullstack Lead |
 | `S5-T05` | Mobile Responsive Adaptation ($380\text{px}$ Breakpoint Support) | Optimized mobile payloads, lightweight card projections for low bandwidth | Mobile drawer navigation, stacked 1-col Bento cards, full-width drawer, 0 h-scroll | `COMPLETED` | Frontend Lead |
 | `S5-T06` | Full Compliance Audit, Playwright E2E Suite & Release Readiness | Static security AST checks (0 send calls, RLS audit, immutable log checks) | AST color scan (0 forbidden hues), full-journey automated Playwright E2E suite | `COMPLETED` | QA / Sentinel |
 
@@ -86,21 +86,24 @@
 
 ---
 
-### Feature `S5-T04`: Asynchronous Google Sheet Mirroring Worker & Audit Telemetry
+### Feature `S5-T04`: ~~Asynchronous Google Sheet Mirroring Worker & Audit Telemetry~~ *(Decommissioned & Superseded)*
+
+> [!WARNING]
+> **Data Sovereignty Deprecation:** Downstream outbound mirroring to Google Sheets has been eliminated to protect proprietary platform intelligence and prevent offline data harvesting. Outbound sync queues and 429 quota handlers are decommissioned. Inbound data ingestion is superseded by **M2-FR14 Standardized Inbound Bulk Upload Pipeline (.csv & .xlsx)**.
 
 #### Backend Tasks
-- Implement asynchronous mirror worker batching PostgreSQL mutations across `jobs`, `applications`, and `contacts` to the user's private Google Sheet.
-- Implement exponential backoff and rate limiting to prevent Google Sheets API 429 quota errors.
+- ~~Implement asynchronous mirror worker batching PostgreSQL mutations across `jobs`, `applications`, and `contacts` to the user's private Google Sheet.~~ *(Struck out & eliminated).*
+- ~~Implement exponential backoff and rate limiting to prevent Google Sheets API 429 quota errors.~~ *(Struck out & eliminated).*
 - Build audit telemetry engine querying `decision_events` to compute conversion funnels (Discovered $\to$ Chosen $\to$ Sent $\to$ In Conversation).
 
 #### Frontend Tasks
 - Display funnel conversion metrics card on `/outreach` and `/health`.
-- Render manual "Sync to Sheet Now" action button with last synced timestamp badge.
+- ~~Render manual "Sync to Sheet Now" action button with last synced timestamp badge.~~ *(Struck out & eliminated from UI).*
 - Provide CSV export button for audit event logs.
 
 #### End-to-End User Experience & Verification
-- **User Journey:** Candidate triages jobs in Backdoor. In the background, their personal Google Sheet stays synchronized in real time with zero UI delay. Candidate views conversion funnel telemetry showing reply rates across Door 1 vs. Door 2.
-- **Verification:** `npm run test:node tests/sheet-mirror-worker.test.ts`.
+- **User Journey:** Candidate triages jobs in Backdoor. Pipeline conversions update in real time with zero external spreadsheet dependencies. Candidate views conversion funnel telemetry showing reply rates across entry pathways.
+- ~~**Verification:** `npm run test:node tests/sheet-mirror-worker.test.ts`.~~ *(Replaced by inbound upload test suite).*
 
 ---
 

@@ -1,20 +1,11 @@
 /**
- * Subsystem 6: Asynchronous Google Sheet Mirroring Worker & Audit Telemetry (@workspace/sheets M5)
+ * Subsystem 6: Platform Audit Telemetry & Conversion Funnel Engine (@workspace/sheets M5 / Sprint 6)
  * Runbook §5.5 | PRD §5.6 | Cardinal Rules R1, R3, R5, R6 & R8 Invariants
+ *
+ * NOTE: Outbound Google Sheet mirroring has been permanently decommissioned (Sprint 6 M2-FR14)
+ * to protect platform data sovereignty and prevent external exfiltration of proprietary scoring.
+ * Conversion funnel telemetry and RFC-4180 audit log exporting are preserved.
  */
-
-export interface SheetMirrorRecord {
-  jobId: string;
-  company: string;
-  title: string;
-  stage: string;
-  fitScore: number;
-  contactName?: string;
-  contactEmail?: string;
-  door?: 'door1' | 'door2' | 'door3';
-  status: 'SYNCED' | 'PENDING' | 'FAILED';
-  lastSyncedAt: string;
-}
 
 export interface FunnelDoorMetrics {
   sent: number;
@@ -36,204 +27,6 @@ export interface ConversionFunnelTelemetry {
   door3: FunnelDoorMetrics;
   lastCalculatedAt: string;
 }
-
-export interface SheetSyncSummary {
-  connectedSheetId: string;
-  sheetUrl: string;
-  lastSyncedAt: string;
-  pendingSyncCount: number;
-  totalSyncedRows: number;
-  isSyncing: boolean;
-  syncStatus: 'HEALTHY' | 'SYNCING' | 'ERROR';
-}
-
-// In-memory mirror state & seeded conversion data
-let mirrorRows: SheetMirrorRecord[] = [
-  {
-    jobId: 'stripe-staff-pm',
-    company: 'Stripe',
-    title: 'Staff Product Manager, Connect Core',
-    stage: 'IN_CONVERSATION',
-    fitScore: 94,
-    contactName: 'Claire Hughes Johnson',
-    contactEmail: 'claire@stripe.com',
-    door: 'door2',
-    status: 'SYNCED',
-    lastSyncedAt: '2026-10-30T10:00:00.000Z',
-  },
-  {
-    jobId: 'linear-insights-pm',
-    company: 'Linear',
-    title: 'Product Lead, Workflows & Insights',
-    stage: 'SENT',
-    fitScore: 91,
-    contactName: 'Karri Saarinen',
-    contactEmail: 'karri@linear.app',
-    door: 'door1',
-    status: 'SYNCED',
-    lastSyncedAt: '2026-10-30T09:45:00.000Z',
-  },
-  {
-    jobId: 'anthropic-eval-pm',
-    company: 'Anthropic',
-    title: 'Product Manager, Claude Reasoning',
-    stage: 'INTERVIEWING',
-    fitScore: 96,
-    contactName: 'Dario Amodei',
-    contactEmail: 'dario@anthropic.com',
-    door: 'door1',
-    status: 'SYNCED',
-    lastSyncedAt: '2026-10-30T10:15:00.000Z',
-  },
-  {
-    jobId: 'openai-applied-pm',
-    company: 'OpenAI',
-    title: 'Product Manager, Applied Research',
-    stage: 'DRAFT_READY',
-    fitScore: 89,
-    contactName: 'Peter Welinder',
-    contactEmail: 'peter@openai.com',
-    door: 'door1',
-    status: 'PENDING',
-    lastSyncedAt: '2026-10-29T18:00:00.000Z',
-  },
-];
-
-let syncSummaryState: SheetSyncSummary = {
-  connectedSheetId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
-  sheetUrl: 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit',
-  lastSyncedAt: '2026-10-30T10:15:00.000Z',
-  pendingSyncCount: 1,
-  totalSyncedRows: 3,
-  isSyncing: false,
-  syncStatus: 'HEALTHY',
-};
-
-// ============================================================================
-// 1. Asynchronous Google Sheet Synchronization Worker
-// ============================================================================
-
-/**
- * Executes a sync batch to the candidate's private Google Sheet.
- * Includes simulated exponential backoff retry handler (Runbook §5.5).
- */
-export async function executeSheetSyncBatch(options?: {
-  forceFullResync?: boolean;
-  maxRetries?: number;
-}): Promise<{
-  success: boolean;
-  syncedCount: number;
-  failedCount: number;
-  durationMs: number;
-  summary: SheetSyncSummary;
-}> {
-  syncSummaryState.isSyncing = true;
-  syncSummaryState.syncStatus = 'SYNCING';
-
-  const startTime = Date.now();
-  const maxRetries = options?.maxRetries ?? 3;
-  let attempt = 0;
-  let backoffDelayMs = 100;
-
-  // Rate-limiting simulation loop with exponential backoff
-  while (attempt < maxRetries) {
-    attempt++;
-    try {
-      // Simulate sub-second network roundtrip to Google Sheets API
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      break; // Success
-    } catch {
-      if (attempt >= maxRetries) {
-        syncSummaryState.isSyncing = false;
-        syncSummaryState.syncStatus = 'ERROR';
-        throw new Error('Google Sheets API rate limit exceeded (429) after exponential backoff retries');
-      }
-      await new Promise((resolve) => setTimeout(resolve, backoffDelayMs));
-      backoffDelayMs *= 2; // exponential backoff
-    }
-  }
-
-  // Mark pending rows as synced
-  let syncedCount = 0;
-  const nowIso = new Date().toISOString();
-
-  mirrorRows = mirrorRows.map((row) => {
-    if (options?.forceFullResync || row.status === 'PENDING') {
-      syncedCount++;
-      return { ...row, status: 'SYNCED', lastSyncedAt: nowIso };
-    }
-    return row;
-  });
-
-  syncSummaryState = {
-    ...syncSummaryState,
-    isSyncing: false,
-    syncStatus: 'HEALTHY',
-    lastSyncedAt: nowIso,
-    pendingSyncCount: 0,
-    totalSyncedRows: mirrorRows.length,
-  };
-
-  return {
-    success: true,
-    syncedCount: syncedCount || mirrorRows.length,
-    failedCount: 0,
-    durationMs: Date.now() - startTime,
-    summary: { ...syncSummaryState },
-  };
-}
-
-/**
- * Get current sync summary telemetry.
- */
-export function getSheetSyncSummary(): SheetSyncSummary {
-  const pending = mirrorRows.filter((r) => r.status === 'PENDING').length;
-  return {
-    ...syncSummaryState,
-    pendingSyncCount: pending,
-    totalSyncedRows: mirrorRows.filter((r) => r.status === 'SYNCED').length,
-  };
-}
-
-// ============================================================================
-// 2. Audit Telemetry & Conversion Funnel Engine
-// ============================================================================
-
-/**
- * Computes conversion funnel metrics across candidate pipeline stages.
- */
-export function getConversionFunnelTelemetry(): ConversionFunnelTelemetry {
-  return {
-    totalDiscovered: 142,
-    totalChosen: 38,
-    totalDraftReady: 24,
-    totalSent: 18,
-    totalInConversation: 7,
-    totalInterviews: 4,
-    totalOffers: 1,
-    replyRatePercent: 38.9, // 7 / 18 = 38.9%
-    door1: {
-      sent: 8,
-      replied: 4,
-      replyRatePercent: 50.0, // VP/Head of Product outreach has highest yield
-    },
-    door2: {
-      sent: 6,
-      replied: 2,
-      replyRatePercent: 33.3, // Talent partner outreach
-    },
-    door3: {
-      sent: 4,
-      replied: 1,
-      replyRatePercent: 25.0, // Peer PM warm intro
-    },
-    lastCalculatedAt: new Date().toISOString(),
-  };
-}
-
-// ============================================================================
-// 3. Immutable Decision Events CSV Exporter (RFC 4180)
-// ============================================================================
 
 export interface DecisionEventLogItem {
   id: string;
@@ -294,6 +87,38 @@ const AUDIT_EVENT_LOGS: DecisionEventLogItem[] = [
 ];
 
 /**
+ * Computes conversion funnel metrics across candidate pipeline stages.
+ */
+export function getConversionFunnelTelemetry(): ConversionFunnelTelemetry {
+  return {
+    totalDiscovered: 142,
+    totalChosen: 38,
+    totalDraftReady: 24,
+    totalSent: 18,
+    totalInConversation: 7,
+    totalInterviews: 4,
+    totalOffers: 1,
+    replyRatePercent: 38.9, // 7 / 18 = 38.9%
+    door1: {
+      sent: 8,
+      replied: 4,
+      replyRatePercent: 50.0,
+    },
+    door2: {
+      sent: 6,
+      replied: 2,
+      replyRatePercent: 33.3,
+    },
+    door3: {
+      sent: 4,
+      replied: 1,
+      replyRatePercent: 25.0,
+    },
+    lastCalculatedAt: new Date().toISOString(),
+  };
+}
+
+/**
  * Generates an RFC-4180 compliant CSV string of all immutable decision events.
  */
 export function exportDecisionEventsToCsv(): string {
@@ -311,10 +136,22 @@ export function exportDecisionEventsToCsv(): string {
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
 }
 
+/**
+ * Log an immutable decision event into the append-only ledger.
+ */
+export function logDecisionEvent(evt: Omit<DecisionEventLogItem, 'id' | 'createdAt'>): DecisionEventLogItem {
+  const item: DecisionEventLogItem = {
+    ...evt,
+    id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: new Date().toISOString(),
+  };
+  AUDIT_EVENT_LOGS.unshift(item);
+  return item;
+}
+
 function escapeCsv(val: string): string {
   if (val.includes(',') || val.includes('"') || val.includes('\n') || val.includes('\r')) {
     return `"${val.replace(/"/g, '""')}"`;
   }
   return val;
 }
-

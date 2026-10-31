@@ -1,0 +1,6 @@
+company_name,job_title,apply_url,location,workplace_type,raw_description
+Stripe,Staff AI Product Manager,https://stripe.com/jobs/12345,San Francisco CA,hybrid,"Lead foundational LLM API platform capabilities, token billing economics, inference caching, and developer platform adoption across global teams."
+Linear,Product Lead - Insights & Workflows,https://linear.app/careers/67890,Remote,remote,"Own workflow intelligence, team analytics, and productivity acceleration features. Experience with high-craft design and keyboard-first SaaS interfaces."
+Figma,Senior Product Manager - Design Systems,https://figma.com/careers/54321,New York NY,hybrid,"Scale Figma design systems tooling, component management, multi-platform design tokens, and enterprise customer governance workflows."
+Anthropic,Product Manager - Safety & Model Alignment,https://anthropic.com/careers/99887,San Francisco CA,on-site,"Drive evaluation harness development, model behavioral safety boundaries, automated red-teaming pipelines, and developer compliance tooling."
+Vercel,Senior Product Manager - Developer Experience,https://vercel.com/careers/11223,Remote,remote,"Drive developer onboarding, preview deployments, Next.js developer workflow telemetry, and high-frequency deployment reliability."

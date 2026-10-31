@@ -8,17 +8,13 @@ import {
   getFleetHealthSummary,
 } from '@/engine/fleet-health';
 import {
-  getSheetSyncSummary,
   getConversionFunnelTelemetry,
-  SheetSyncSummary,
   ConversionFunnelTelemetry,
 } from '@/engine/sheet-mirror';
 
 export default function HealthPage() {
   const [fleetSummary, setFleetSummary] = useState<FleetHealthSummary>(getFleetHealthSummary);
-  const [sheetSync, setSheetSync] = useState<SheetSyncSummary>(getSheetSyncSummary);
   const [funnel, setFunnel] = useState<ConversionFunnelTelemetry>(getConversionFunnelTelemetry);
-  const [isSyncingSheet, setIsSyncingSheet] = useState(false);
   const [syncToast, setSyncToast] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,15 +33,6 @@ export default function HealthPage() {
         setFleetSummary(getFleetHealthSummary());
       });
 
-    fetch('/api/sheet/sync')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.summary) {
-          setSheetSync(data.summary);
-        }
-      })
-      .catch(() => {});
-
     fetch('/api/telemetry/funnel')
       .then((res) => res.json())
       .then((data) => {
@@ -55,28 +42,6 @@ export default function HealthPage() {
       })
       .catch(() => {});
   }, []);
-
-  const handleTriggerSync = async () => {
-    setIsSyncingSheet(true);
-    setSyncToast(null);
-    try {
-      const res = await fetch('/api/sheet/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ forceFullResync: true }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSheetSync(data.summary);
-        setSyncToast(`✓ Mirrored ${data.syncedCount} records to Google Sheet.`);
-      }
-    } catch {
-      setSyncToast('Sync execution failed.');
-    } finally {
-      setIsSyncingSheet(false);
-      setTimeout(() => setSyncToast(null), 4000);
-    }
-  };
 
   const handleExportCsv = () => {
     window.open('/api/audit/export-csv', '_blank');
@@ -237,64 +202,50 @@ export default function HealthPage() {
 
         {/* Google Sheet Live Mirroring & Conversion Funnel Telemetry */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Card 1: Google Sheet Mirror */}
+          {/* Card 1: Decision Audit Telemetry & RFC 4180 Ledger */}
           <div className="bg-[#0F1523] border border-white/8 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-white">Google Sheet Asynchronous Mirror</h3>
+                  <h3 className="text-sm font-semibold text-white">Decision Audit Ledger &amp; Security Telemetry</h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    {sheetSync.syncStatus}
+                    DATA SOVEREIGN
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Real-time PostgreSQL mutations mirrored into candidate private spreadsheet.
+                  Append-only decision events ledger and cryptographic tenant data isolation.
                 </p>
               </div>
-              <a
-                href={sheetSync.sheetUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-mono text-[#38BDF8] hover:underline"
-              >
-                Open Sheet ↗
-              </a>
+              <span className="text-xs font-mono text-emerald-400">
+                Protected &check;
+              </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 p-3 bg-[#161F33]/50 rounded-lg border border-white/5 text-center">
               <div>
-                <span className="text-[10px] uppercase font-mono text-slate-400 block">Synced Rows</span>
-                <span className="text-base font-bold font-mono text-white">{sheetSync.totalSyncedRows}</span>
+                <span className="text-[10px] uppercase font-mono text-slate-400 block">Ledger Status</span>
+                <span className="text-base font-bold font-mono text-white">Active</span>
               </div>
               <div>
-                <span className="text-[10px] uppercase font-mono text-slate-400 block">Pending</span>
-                <span className="text-base font-bold font-mono text-teal-400">{sheetSync.pendingSyncCount}</span>
+                <span className="text-[10px] uppercase font-mono text-slate-400 block">Outbound Mirror</span>
+                <span className="text-base font-bold font-mono text-emerald-400">Decommissioned</span>
               </div>
               <div>
-                <span className="text-[10px] uppercase font-mono text-slate-400 block">Rate Limit Backoff</span>
-                <span className="text-base font-bold font-mono text-emerald-400">0 ms</span>
+                <span className="text-[10px] uppercase font-mono text-slate-400 block">Audit Standard</span>
+                <span className="text-base font-bold font-mono text-[#38BDF8]">RFC 4180</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-[11px] font-mono text-slate-400">
-                Last synced: {new Date(sheetSync.lastSyncedAt).toLocaleTimeString()}
+                Encrypted PostgreSQL Relational Storage
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleExportCsv}
-                  className="px-3 py-1.5 bg-[#161F33] hover:bg-white/10 text-slate-300 border border-white/10 rounded-lg text-xs font-mono transition-colors"
-                >
-                  Download CSV
-                </button>
-                <button
-                  onClick={handleTriggerSync}
-                  disabled={isSyncingSheet}
-                  className="px-3 py-1.5 bg-[#2563EB] hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
-                >
-                  {isSyncingSheet ? 'Syncing...' : 'Sync to Sheet Now'}
-                </button>
-              </div>
+              <button
+                onClick={handleExportCsv}
+                className="px-3 py-1.5 bg-[#2563EB] hover:bg-blue-600 text-white rounded-lg text-xs font-medium font-mono transition-colors shadow-sm"
+              >
+                Download Audit Log (CSV)
+              </button>
             </div>
           </div>
 
