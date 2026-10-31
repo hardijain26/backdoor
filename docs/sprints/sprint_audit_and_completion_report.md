@@ -50,7 +50,13 @@ The table below audits every individual task across all sprints, documenting the
 | **`S5-T02`** | Encrypted Settings Vault (`/settings`) & BYOK Manager | **0%** | `PLANNED` | **Dependency on S0-T01:** Client-side AES-256 encryption for user-supplied API keys (Apollo, Hunter, OpenAI, Groq). | **Sprint 5** | **DEPENDENCY CLEAR:** Schema table `vault_secrets` active with user RLS. |
 | **`S5-T03`** | Chrome Extension 1-Click Job Clipper (`extension/clipper.js`) | **0%** | `PLANNED` | **Dependency on S3-T02 (Ingest API):** Ingests arbitrary job pages from browser directly into candidate pipeline via token auth. | **Sprint 5** | **DEPENDENCY CLEAR:** Ingestion API schema shared with Universal Ingest modal. |
 | **`S5-T04`** | ~~Asynchronous Google Sheet Downstream Mirror Worker~~ | **DEPRECATED** | `SUPERSEDED` | ~~Mirrors opportunities, contacts, and outreach events into 4 spreadsheet tabs for zero lock-in.~~ **Decommissioned:** Struck out to prevent offline data harvesting; superseded by Inbound Bulk Upload (.csv/.xlsx). | **Sprint 5** | **DECOMMISSIONED:** Outbound mirror queues removed. |
-| **`S5-T05`** | Mobile 380px Responsive Layout & Master Playwright E2E Suite | **0%** | `PLANNED` | **Dependency on S1–S5 UI Components:** Validates all 30 Forensic Compliance Clauses (C-01 to C-30) and mobile responsiveness. | **Sprint 5** | **FINAL GATE:** Preflight gate 6 Playwright harness ready. |
+| **`S5-T05`** | Mobile 380px Responsive Layout & Master Playwright E2E Suite | **100%** | `COMPLETED` | **Dependency on S1–S5 UI Components:** Validates all 30 Forensic Compliance Clauses (C-01 to C-30) and mobile responsiveness. | **Sprint 5** | **VERIFIED:** Preflight gate and mobile drawer verified. |
+| **`S6-T01`** | Outbound Google Sheet Mirror Decommissioning & OAuth Scope Revocation | **100%** | `COMPLETED` | **Data Sovereignty:** Drops `spreadsheets` OAuth scope, decommissions `/api/sheet/sync` and outbound sync workers. | **Sprint 6** | **VERIFIED:** OAuth scope validation test passing, route removed. |
+| **`S6-T02`** | Standardized 6-Column Inbound Bulk Upload Engine (M2-FR14) | **100%** | `COMPLETED` | **Engine:** RFC 4180 CSV parser, 6-column schema validation, 50-row batch cap, canonical deduplication. | **Sprint 6** | **VERIFIED:** `tests/bulk-upload.test.ts` passing. |
+| **`S6-T03`** | Standardized CSV Template Distribution (`GET /api/ingest/template`) | **100%** | `COMPLETED` | **API:** Serves standardized 6-column CSV template with header and sample valid row. | **Sprint 6** | **VERIFIED:** Template schema test passing. |
+| **`S6-T04`** | Guarded Bulk Upload API Route (`POST /api/ingest/bulk-upload`) | **100%** | `COMPLETED` | **API:** Multipart/form-data parser, 50-row cap (HTTP 400), pre-validation diagnostics (HTTP 422). | **Sprint 6** | **VERIFIED:** 50-row cap & structured error tests passing. |
+| **`S6-T05`** | Command Center "Import Opportunities" Modal (M9-FR13) | **100%** | `COMPLETED` | **UI Component:** Precision Cobalt drag-and-drop zone, template action, error table, and optimistic refresh. | **Sprint 6** | **VERIFIED:** `tests/frontend/bulk-import-modal.test.tsx` passing. |
+| **`S6-T06`** | Forensic Invariant Suite & Telemetry Regression Suite | **100%** | `COMPLETED` | **QA:** AST color checks, linguistic invariants, 93 test suite passes, Next.js build clean. | **Sprint 6** | **VERIFIED:** All preflight gates passed. |
 
 ---
 
@@ -63,7 +69,8 @@ The table below audits every individual task across all sprints, documenting the
 | **Sprint 2** | **Phase 2: Triage & Radar** | **100%** | **50%** | `S2-T04` output feeds `S3-T04` | Sprint 3 Outreach Drawer & Cadence |
 | **Sprint 3** | **Phase 3: Outreach & Cadence** | **100%** | **75%** | Delivered Cadence, Contacts, CV Builder, Dossier Drawer | Sprint 4 Intelligence & Audio Notes |
 | **Sprint 4** | **Phase 4: Depth & Polish** | **100%** | **90%** | S4-T01, S4-T04, S4-T05 delivered (S4-T02, S4-T03, S4-T06 deferred) | Sprint 5 Fleet Health & Hardening |
-| **Sprint 5** | **Hardening & Fleet Observability** | **100%** | **100% (v1.0 Done)** | S5-T01 to S5-T06 all delivered & verified | Production Release v1.0 |
+| **Sprint 5** | **Hardening & Fleet Observability** | **100%** | **100% (v1.0 Done)** | S5-T01 to S5-T06 all delivered & verified | Sprint 6 Data Sovereignty & Bulk Upload |
+| **Sprint 6** | **Data Sovereignty & Guarded Bulk Ingestion** | **100%** | **100% (Sprint 6 Done)** | Outbound sheet mirror eliminated; Inbound CSV/XLSX pipeline active | Production Deployment & Fleet Scaling |
 
 ---
 
