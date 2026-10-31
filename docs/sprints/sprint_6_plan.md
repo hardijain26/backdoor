@@ -124,3 +124,4 @@
 - [x] Outbound sync route `/api/sheet/sync` completely removed.
 - [x] Inbound endpoints `/api/ingest/template` and `/api/ingest/bulk-upload` active.
 - [x] Working on dedicated branch `feature/p6-ingest-bulk-upload`.
+

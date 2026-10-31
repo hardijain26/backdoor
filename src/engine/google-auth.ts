@@ -49,3 +49,4 @@ export function validateOAuthScopes(scopes: string[]): {
     authorizedScopes: getAuthorizedGoogleOAuthScopes(),
   };
 }
+
