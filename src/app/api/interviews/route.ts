@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getInterviewsWorkspaceState, addInterviewRound } from '@/engine/interviews-workspace';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const state = getInterviewsWorkspaceState();
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get('mode') as 'demo' | 'live' | null;
+    const state = getInterviewsWorkspaceState(mode || undefined);
     return NextResponse.json(state, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';

@@ -207,12 +207,17 @@ export function resetInterviewsWorkspace(data?: InterviewRoundRecord[]): void {
 /**
  * Get all interview rounds with aggregated workspace metrics.
  */
-export function getInterviewsWorkspaceState(): InterviewsWorkspaceState {
+export function getInterviewsWorkspaceState(mode?: 'demo' | 'live'): InterviewsWorkspaceState {
+  const initialIds = new Set(['int-anthropic-hm-01', 'int-stripe-rec-01', 'int-datadog-sys-01']);
+  const pool = mode === 'live'
+    ? interviewsStore.filter((i) => !initialIds.has(i.id))
+    : interviewsStore;
+
   let openActions = 0;
   let completed = 0;
   let upcoming = 0;
 
-  for (const interview of interviewsStore) {
+  for (const interview of pool) {
     if (interview.status === 'COMPLETED') completed++;
     if (interview.status === 'SCHEDULED') upcoming++;
 
@@ -225,11 +230,11 @@ export function getInterviewsWorkspaceState(): InterviewsWorkspaceState {
   }
 
   return {
-    totalInterviews: interviewsStore.length,
+    totalInterviews: pool.length,
     completedRounds: completed,
     openActionItems: openActions,
     upcomingRounds: upcoming,
-    interviews: [...interviewsStore],
+    interviews: [...pool],
   };
 }
 

@@ -25,7 +25,9 @@
 | **`S6-T04`** | Guarded Bulk Upload API Route (`POST /api/ingest/bulk-upload`) | Deliver `POST /api/ingest/bulk-upload` route supporting multipart/form-data, returning HTTP 400 for >50 rows and HTTP 422 with structured diagnostics. | Real-time validation error reporting and batch ingestion response. | `COMPLETED` | API Lead |
 | **`S6-T05`** | Command Center "Import Opportunities" Modal (`@ui/command-center` M9-FR13) | Support state integration with Morning Radar feed (`INITIAL_RADAR_JOBS`). | Build `src/components/ingest/ImportModal.tsx`: Precision Cobalt drag-and-drop zone, template action, error table, and optimistic refresh. Add "📥 Import" buttons to `/radar` and `/`. | `COMPLETED` | Frontend Lead |
 | **`S6-T06`** | Forensic Invariant Suite & Telemetry Regression Suite | Unit & integration tests in `tests/bulk-upload.test.ts`, `tests/frontend/bulk-import-modal.test.tsx`, and updated `tests/sheet-mirror-worker.test.ts`. | AST scanner enforcing Rule R7 (zero forbidden colors) and strict linguistic rules across all touched components. | `COMPLETED` | QA / Sentinel |
-| **`S6-T07`** | Tri-Segmented Source Fleet, Multi-Role Feeds, Inbound Streams (LinkedIn/Naukri Emails, Slack, Twitter/X) | Model role tags (`applicableRoles`) & sections on sources; dynamic track query interpolation on aggregators (JSearch, Apollo, Google Jobs); LinkedIn & Naukri India email digest parsers (LPA CTC, metro normalization); Slack `#jobs` webhook/bot stream listener; Twitter post parser pipeline via `safe-fetch.ts`. | Tri-segmented `/settings` Sources tab: (1) Popular ATS with bulk toggle, (2) Platform APIs with role filters (`Product`, `Engineering`, `Design/UX`, `Legal`, `Finance`), (3) Inbound & Social Streams (LinkedIn/Naukri email forwarding cards, Slack channel connector, Twitter handle manager). | `PLANNED` | Fullstack Lead |
+| **`S6-T07`** | Tri-Segmented Source Fleet, Multi-Role Feeds, Inbound Streams (LinkedIn/Naukri Emails, Slack, Twitter/X) | Model role tags (`applicableRoles`) & sections on sources; dynamic track query interpolation on aggregators (JSearch, Apollo, Google Jobs); LinkedIn & Naukri India email digest parsers (LPA CTC, metro normalization); Slack `#jobs` webhook/bot stream listener; Twitter post parser pipeline via `safe-fetch.ts`. | Tri-segmented `/settings` Sources tab: (1) Popular ATS with bulk toggle, (2) Platform APIs with role filters (`Product`, `Engineering`, `Design/UX`, `Legal`, `Finance`), (3) Inbound & Social Streams (LinkedIn/Naukri email forwarding cards, Slack channel connector, Twitter handle manager). | `COMPLETED` | Fullstack Lead |
+| **`S6-T08`** | Categorized Platform Tiers (Remote, Startup, Product) & Regional API Discovery Hub | Platform category sub-segmentation (`remote`, `startup`, `product_dynamic`), role relevance filter matching candidate's active tracks, Regional Job API directory with search query interpolation and 1-click BYOK integration. | Section 2 tab pills: `Remote Jobs`, `Startup Jobs (YC & Wellfound)`, `Product & Dynamic Feeds`, and interactive "API Discovery & Regional Paid Feeds" search hub with direct integration dialog. | `COMPLETED` | Fullstack Lead |
+| **`S6-T09`** | Direct Gmail Alert Ingest & Morning Radar Dual-View Source Filtering | Autonomous Gmail API inbox scanner (`gmail.readonly`) querying LinkedIn/Naukri alert digests (bypassing email forwarding); exact source tagging (`linkedin_alert`, `naukri_alert`). | Morning Radar toolbar Source Filter selector (`sourceFilter: string | 'ALL'`) operational across both Bento (Kanban) and Dense Table (List) views; explicit source provenance badges on every role card/row. | `COMPLETED` | Fullstack Lead |
 
 ---
 
@@ -143,6 +145,68 @@
 - **Verification:**
   - `npm run test:node tests/source-categorization.test.ts`.
   - `npm run test:unit tests/frontend/settings-workspace.test.tsx`.
+
+---
+
+### Feature `S6-T08`: Categorized Platform Tiers (Remote, Startup, Product) & Regional API Discovery Hub
+- **Objective:** Provide focused, high-signal platform feed views tailored specifically to Product Management & candidate dynamic tracks, partition feeds into clear categories (Remote, Startup, Product), and provide an interactive search & BYOK integration directory for regional job APIs.
+- **Backend & Engine Implementation:**
+  - In `src/engine/scraper.ts`:
+    - Extend `SourceDefinition` with optional `platformCategory?: 'remote' | 'startup' | 'product_dynamic' | 'aggregator'`.
+    - Map verified platform sources cleanly:
+      - `REMOTE`: `remotive`, `remoteok`, `weworkremotely`, `jobspresso`, `himalayas`, `justremote`.
+      - `STARTUP`: `yc_startup`, `wellfound`, `hn_hiring`, `product_hunt`.
+      - `PRODUCT_DYNAMIC`: `lennys_jobs`, `mind_the_product`, `mindstone`, `otta`, `levels_fyi`, `builtin`, `the_muse`.
+      - `AGGREGATOR`: `apify_greenhouse`, `apify_linkedin`, `rapidapi_jsearch`, `apollo_jobs`, `hunter_leads`, `serpapi_jobs`.
+  - In `src/engine/settings.ts`:
+    - Catalog of regional & role-specific job APIs (`POPULAR_JOB_APIS`) with metadata: name, provider, roleAffinity (`product`, `engineering`, `all`), regions (`India`, `US`, `UK`, `EU`, `Remote`, `Global`), protocol (`REST_API`, `BYOK_AGGREGATOR`), pricing (`Free Tier Available`, `Paid API / BYOK`), documentation URL, and integration schema.
+    - Helper `searchJobApis(query?: string, role?: string, region?: string)` for filtered discovery.
+- **Frontend Implementation (`src/components/settings/SettingsWorkspace.tsx`):**
+  - Section 2 Sub-Tabs / Filter Pills:
+    - `All Relevant (X)`: Default view scoped strictly to Product Management & active dynamic tracks.
+    - `Remote Jobs (6)`: Dedicated remote boards view.
+    - `Startup Jobs (4)`: High-signal YC & Wellfound startup ecosystem boards.
+    - `Product & Dynamic Feeds (7)`: Curated PM communities and salary/culture platforms.
+    - `BYOK Aggregators (6)`: High-capacity multi-engine aggregators.
+  - Interactive "API Discovery & Regional Paid Feeds" Search Bar & Directory:
+    - Search input by keyword (e.g. "Adzuna", "Jooble", "India", "Remote").
+    - Role selector (`Product Manager`, `Engineering`, `All Roles`).
+    - Region selector (`All Regions`, `India`, `United States`, `United Kingdom`, `European Union`, `Global Remote`).
+    - Card grid showing matching APIs with status (Configured vs. Not Configured), regional badge, role badge, pricing tier.
+    - "Integrate API" action opening direct BYOK configuration dialog to save key/token/endpoint into active fleet.
+- **Verification:**
+  - `npm run test:node tests/source-categorization.test.ts`.
+  - `npm run test:unit tests/frontend/settings-workspace.test.tsx`.
+
+---
+
+### Feature `S6-T09`: Direct Gmail Alert Ingestion & Morning Radar Dual-View Source Filtering
+- **Objective:** Eliminate manual email forwarding friction by leveraging existing Google OAuth (`gmail.readonly`) to autonomously sweep inbox for LinkedIn and Naukri alert digests, attribute precise job source metadata, and deliver real-time source filtering across both Bento (Kanban) and Dense Table (List) views on `/radar`.
+- **Backend & Engine Implementation:**
+  - Direct Gmail Inbox Scanner (`src/engine/gmail-ingest.ts`):
+    - Autonomous crawler running daily at 04:00 AM (and on-demand via `POST /api/ingest/gmail-sync`).
+    - Queries candidate's Gmail inbox with targeted filters:
+      - `from:(jobalerts-noreply@linkedin.com) newer_than:1d`
+      - `from:(alerts@naukri.com) newer_than:1d`
+    - Parses HTML message bodies, extracting individual role cards, titles, companies, locations, and clean canonical URLs (stripping tracking query params).
+    - Assigns canonical source identifiers: `linkedin_alert` and `naukri_alert`.
+    - Pushes jobs through `dedup_match_key` canonical deduplication and Module 3 deterministic fit scoring.
+  - Granular Source Attribution:
+    - Normalizes sources across the entire pool: `greenhouse`, `lever`, `ashby`, `workday`, `linkedin_alert`, `naukri_alert`, `twitter_scout`, `slack_channel`, `yc_startup`, `remotive`, `remoteok`, etc.
+- **Frontend Implementation (`src/app/radar/page.tsx` & `/settings`):**
+  - Morning Radar Dual-View Source Filter Toolbar:
+    - Adds `sourceFilter` selector dropdown / pill filter (`[Filter by Source: All Sources ▾]`) adjacent to Density and Crawl Scope selectors.
+    - Dynamically populated with active sources present in the scored pool + configured ingestion sources.
+    - Reactive Filtering: Seamlessly filters opportunities across **both 1:1 Bento Cards (Kanban view)** and **Dense Command Table (List view)** simultaneously.
+    - Preserves keyboard navigation (`j`/`k`/`s`/`c`/`Enter`), continuous match-score sorting, and unread triage counts.
+  - Granular Source Provenance Badging:
+    - Bento Cards: Distinct, formatted source badge (`LinkedIn Alert`, `Naukri Alert`, `Ashby ATS`, etc.) with visual provenance icon.
+    - Dense Table: Clean font-mono source indicator tag in the Source column.
+  - Settings Workspace Direct Gmail Inbox Card:
+    - Provides a dedicated card in Section 3 with connection status pill (`Google OAuth Connected: gmail.readonly`), 1-click **"⚡ Sync Inbox Now"** trigger button, and last sync timestamp telemetry.
+- **Verification:**
+  - `npm run test:node tests/radar-source-filtering.test.ts`.
+  - `npm run test:unit tests/frontend/radar-source-filter.test.tsx`.
 
 ---
 

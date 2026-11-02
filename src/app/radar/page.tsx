@@ -6,6 +6,9 @@ import { ThreeDoorsChips } from '@/components/ThreeDoorsChips';
 import { DossierDrawer, DossierJobData } from '@/components/dossier/DossierDrawer';
 import { UniversalIngestModal } from '@/components/ingest/UniversalIngestModal';
 import { ImportModal } from '@/components/ingest/ImportModal';
+import { formatSourceLabel } from '@/engine/gmail-ingest';
+import { useDataMode, DataModeToggle } from '@/components/DataModeToggle';
+import { getLiveJobs, saveLiveJobs } from '@/engine/data-mode';
 
 export interface RadarJobItem {
   id: string;
@@ -317,6 +320,7 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
 ];
 
 export default function MorningRadarPage() {
+  const { mode, isLive, toggleMode, mounted } = useDataMode();
   const [jobs, setJobs] = useState<RadarJobItem[]>(INITIAL_RADAR_JOBS);
   const [viewMode, setViewMode] = useState<'bento' | 'table'>('bento');
   
@@ -326,6 +330,10 @@ export default function MorningRadarPage() {
   // Time Crawl Scope: 15-Day Backfill (First-Time User) vs 24-Hour Daily Incremental Crawl
   const [timeWindow, setTimeWindow] = useState<'15_days' | '24_hours'>('15_days');
   
+  // Dual-View Source Filter (S6-T09)
+  const [sourceFilter, setSourceFilter] = useState<string>('ALL');
+  const [isSyncingGmail, setIsSyncingGmail] = useState<boolean>(false);
+
   // Quick Filters
   const [filterCategory, setFilterCategory] = useState<'all' | 'high_fit' | 'remote' | 'chosen'>('all');
   const [batchLimit, setBatchLimit] = useState<'12' | 'all'>('all');
@@ -337,6 +345,53 @@ export default function MorningRadarPage() {
   const [bulkToast, setBulkToast] = useState<string | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync jobs whenever data mode (Live vs Demo) changes
+  useEffect(() => {
+    if (!mounted) return;
+    if (isLive) {
+      const live = getLiveJobs<RadarJobItem>();
+      setJobs(live);
+    } else {
+      setJobs(INITIAL_RADAR_JOBS);
+    }
+  }, [isLive, mounted]);
+
+  // On mount: fetch any existing backend Gmail alert jobs from store
+  useEffect(() => {
+    fetch('/api/ingest/gmail-sync')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingIds = new Set(prev.map((j) => j.id));
+            const newItems: RadarJobItem[] = data.jobs
+              .filter((j: any) => !existingIds.has(j.id))
+              .map((j: any) => ({
+                id: j.id,
+                company: j.company,
+                title: j.title,
+                fitScore: j.fitScore,
+                stage: 'DISCOVERED',
+                location: j.location,
+                workplace: j.workplace,
+                salary: j.salary,
+                source: j.source,
+                postedHoursAgo: j.postedHoursAgo || 2,
+                door1: j.door1,
+                door2: j.door2,
+                door3: j.door3,
+              }));
+            const updated = [...newItems, ...prev];
+            if (isLive) {
+              saveLiveJobs(updated);
+            }
+            return updated;
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isLive]);
 
   // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
   useEffect(() => {
@@ -379,7 +434,16 @@ export default function MorningRadarPage() {
     };
   }, [jobs, timeWindow, statusTab]);
 
-  // Master Visible Roles Filter: time window -> status tab -> search -> category -> sorted descending by score
+  // Dynamically compute all distinct sources present in the pool (S6-T09)
+  const availableSources = useMemo(() => {
+    const set = new Set<string>();
+    jobs.forEach((j) => {
+      if (j.source) set.add(j.source);
+    });
+    return ['ALL', ...Array.from(set).sort()];
+  }, [jobs]);
+
+  // Master Visible Roles Filter: time window -> status tab -> source filter -> search -> category -> sorted descending by score
   const visibleJobs = useMemo(() => {
     // 1. Time Window Filter (15-Day Backfill vs 24h Daily Crawl)
     let list = jobs.filter((j) => {
@@ -396,7 +460,16 @@ export default function MorningRadarPage() {
     }
     // 'all' keeps both active, chosen, and skipped roles
 
-    // 3. Search Query
+    // 3. Dual-View Source Filter (S6-T09)
+    if (sourceFilter !== 'ALL') {
+      list = list.filter((j) => {
+        if (sourceFilter === 'linkedin_alert') return j.source === 'linkedin_alert' || j.source === 'linkedin_digest';
+        if (sourceFilter === 'naukri_alert') return j.source === 'naukri_alert' || j.source === 'naukri_webhook';
+        return j.source.toLowerCase() === sourceFilter.toLowerCase();
+      });
+    }
+
+    // 4. Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -404,7 +477,7 @@ export default function MorningRadarPage() {
       );
     }
 
-    // 4. Quick Category Filter Chips
+    // 5. Quick Category Filter Chips
     if (filterCategory === 'high_fit') {
       list = list.filter((j) => j.fitScore >= 80);
     } else if (filterCategory === 'remote') {
@@ -413,7 +486,7 @@ export default function MorningRadarPage() {
       list = list.filter((j) => j.stage === 'CHOSEN');
     }
 
-    // 5. Continuous Score Ranking (Highest Match First; Pinned Ingests at top)
+    // 6. Continuous Score Ranking (Highest Match First; Pinned Ingests at top)
     list.sort((a, b) => {
       const aIngested = a.id.startsWith('ingest-') || a.id.startsWith('bulk-');
       const bIngested = b.id.startsWith('ingest-') || b.id.startsWith('bulk-');
@@ -422,13 +495,57 @@ export default function MorningRadarPage() {
       return b.fitScore - a.fitScore;
     });
 
-    // 6. Batch Focus Slice (Top 12 Focus vs All available)
+    // 7. Batch Focus Slice (Top 12 Focus vs All available)
     if (batchLimit === '12') {
       return list.slice(0, 12);
     }
 
     return list;
-  }, [jobs, timeWindow, statusTab, searchQuery, filterCategory, batchLimit]);
+  }, [jobs, timeWindow, statusTab, sourceFilter, searchQuery, filterCategory, batchLimit]);
+
+  const handleSyncGmailAlerts = async () => {
+    setIsSyncingGmail(true);
+    try {
+      const res = await fetch('/api/ingest/gmail-sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.jobs && data.jobs.length > 0) {
+        setJobs((prev) => {
+          const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+          const newItems: RadarJobItem[] = data.jobs
+            .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
+            .map((j: any) => ({
+              id: j.id,
+              company: j.company,
+              title: j.title,
+              fitScore: j.fitScore,
+              stage: 'DISCOVERED',
+              location: j.location,
+              workplace: j.workplace,
+              salary: j.salary,
+              source: j.source,
+              postedHoursAgo: j.postedHoursAgo || 2,
+              door1: j.door1,
+              door2: j.door2,
+              door3: j.door3,
+            }));
+          const updated = [...newItems, ...prev];
+          if (isLive) {
+            saveLiveJobs(updated);
+          }
+          return updated;
+        });
+        setBulkToast(`✓ Ingested ${data.count} roles from LinkedIn & Naukri alert digests`);
+        setTimeout(() => setBulkToast(null), 4000);
+      } else {
+        setBulkToast('Gmail inbox scanned: 0 new alerts found (all deduplicated).');
+        setTimeout(() => setBulkToast(null), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to sync gmail alerts:', err);
+    } finally {
+      setIsSyncingGmail(false);
+    }
+  };
 
   // Hook for single-key keyboard navigation engine
   useTableKeyboardNav({
@@ -496,7 +613,13 @@ export default function MorningRadarPage() {
       door2: newJob.door2,
       door3: newJob.door3
     };
-    setJobs((prev) => [radarItem, ...prev]);
+    setJobs((prev) => {
+      const updated = [radarItem, ...prev];
+      if (isLive) {
+        saveLiveJobs(updated);
+      }
+      return updated;
+    });
     setSelectedDrawerId(newJob.id);
     setSelectedIndex(0);
   };
@@ -519,7 +642,13 @@ export default function MorningRadarPage() {
         door2: j.door2,
         door3: j.door3,
       }));
-      setJobs((prev) => [...mapped, ...prev]);
+      setJobs((prev) => {
+        const updated = [...mapped, ...prev];
+        if (isLive) {
+          saveLiveJobs(updated);
+        }
+        return updated;
+      });
       if (mapped.length > 0) {
         setSelectedDrawerId(mapped[0].id);
         setSelectedIndex(0);
@@ -543,10 +672,17 @@ export default function MorningRadarPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
               Morning Radar
             </h1>
-            <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live Feed Ranked by Match Score
-            </span>
+            {isLive ? (
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live Testing Mode ({jobs.length} Real {jobs.length === 1 ? 'Role' : 'Roles'})
+              </span>
+            ) : (
+              <span className="text-xs font-mono text-[#38BDF8] bg-[#2563EB]/15 border border-[#2563EB]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]"></span>
+                Demo Showcase (Sample Roles)
+              </span>
+            )}
           </div>
           <p className="text-sm text-[#94A3B8] mt-1">
             Autonomous market surveillance across 35 sources (Free ATS, direct crawler, and curated boards).
@@ -591,6 +727,9 @@ export default function MorningRadarPage() {
             </button>
           </div>
 
+          {/* Data Mode Toggle (Live vs Demo Showcase) */}
+          <DataModeToggle />
+
           {/* Inbound Bulk Import Trigger */}
           <button
             onClick={() => setIsImportModalOpen(true)}
@@ -598,6 +737,23 @@ export default function MorningRadarPage() {
             title="Import opportunities via CSV or XLSX"
           >
             <span>📥 Import</span>
+          </button>
+
+          {/* Direct Gmail Alert Sync Trigger (S6-T09) */}
+          <button
+            onClick={handleSyncGmailAlerts}
+            disabled={isSyncingGmail}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#0F1523] hover:bg-[#161F33] text-emerald-400 border border-emerald-500/30 shadow-sm flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Scan Gmail inbox for LinkedIn & Naukri alert digests"
+          >
+            {isSyncingGmail ? (
+              <>
+                <div className="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <span>Syncing...</span>
+              </>
+            ) : (
+              <span>⚡ Sync Gmail</span>
+            )}
           </button>
 
           {/* Universal Ingest Trigger */}
@@ -646,7 +802,33 @@ export default function MorningRadarPage() {
           </div>
 
           {/* Density Batch Slicing & Traversal Keys */}
-          <div className="flex items-center gap-3 self-end lg:self-auto">
+          <div className="flex items-center gap-3 self-end lg:self-auto flex-wrap">
+            {/* Dual-View Source Filter Dropdown (S6-T09) */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono text-slate-400">Filter by Source:</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => {
+                  setSourceFilter(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                aria-label="Filter by Source"
+                className="bg-[#161F33] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-[#2563EB] font-medium"
+              >
+                <option value="ALL">All Sources ({jobs.length})</option>
+                {availableSources
+                  .filter((s) => s !== 'ALL')
+                  .map((src) => {
+                    const count = jobs.filter((j) => j.source === src).length;
+                    return (
+                      <option key={src} value={src}>
+                        {formatSourceLabel(src)} ({count})
+                      </option>
+                    );
+                  })}
+              </select>
+            </div>
+
             <div className="inline-flex bg-[#161F33] border border-white/10 rounded-lg p-0.5 text-xs">
               <button
                 onClick={() => setBatchLimit('12')}
@@ -769,16 +951,54 @@ export default function MorningRadarPage() {
 
       {/* Content Rendering */}
       {visibleJobs.length === 0 ? (
-        <div className="bg-[#0F1523] border border-white/10 rounded-lg p-12 text-center text-[#94A3B8]">
-          <p className="text-base font-medium text-white">
-            {statusTab === 'skipped' ? 'No Skipped Roles' : 'All Caught Up'}
-          </p>
-          <p className="text-sm mt-1">
-            {statusTab === 'skipped'
-              ? 'You have not skipped any roles yet. Roles skipped in Active tab will appear here.'
-              : 'No opportunities match your current filters. Try switching the crawl scope or expanding filters.'}
-          </p>
-        </div>
+        isLive && jobs.length === 0 ? (
+          <div className="bg-[#0F1523] border border-white/10 rounded-xl p-10 text-center max-w-xl mx-auto my-12 shadow-2xl">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-2xl flex items-center justify-center mx-auto mb-4">
+              📡
+            </div>
+            <h3 className="text-xl font-bold text-white tracking-tight">Live Radar Clean Slate</h3>
+            <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+              You are in <span className="text-emerald-400 font-mono font-medium">Live Testing Mode</span> with mock data removed. Ingest real opportunities to run algorithmic suitability scoring, generate executive dossiers, and triangulate Door 1/2/3 contacts.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setIsIngestModalOpen(true)}
+                className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-semibold shadow-md flex items-center gap-2 transition-colors"
+              >
+                <span>📥 Ingest Role (URL / Text)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-4 py-2 rounded-lg bg-[#161F33] hover:bg-white/10 border border-white/10 text-[#38BDF8] text-xs font-semibold transition-colors flex items-center gap-2"
+              >
+                <span>📄 Upload CSV Batch</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-medium transition-colors flex items-center gap-2"
+              >
+                <span>🧪 Switch to Demo Mode</span>
+              </button>
+            </div>
+            <div className="mt-6 pt-5 border-t border-white/5 text-[11px] font-mono text-slate-500">
+              💡 Tip: Clip any live job from LinkedIn, Greenhouse, or Lever using the Chrome Extension.
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#0F1523] border border-white/10 rounded-lg p-12 text-center text-[#94A3B8]">
+            <p className="text-base font-medium text-white">
+              {statusTab === 'skipped' ? 'No Skipped Roles' : 'All Caught Up'}
+            </p>
+            <p className="text-sm mt-1">
+              {statusTab === 'skipped'
+                ? 'You have not skipped any roles yet. Roles skipped in Active tab will appear here.'
+                : 'No opportunities match your current filters. Try switching the crawl scope or expanding filters.'}
+            </p>
+          </div>
+        )
       ) : viewMode === 'bento' ? (
         /* Responsive Bento Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
@@ -861,11 +1081,25 @@ export default function MorningRadarPage() {
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
-                      Source & Age
+                      Source &amp; Provenance
                     </span>
-                    <span className="font-medium text-white block capitalize text-xs">
-                      {job.source} &bull; {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h` : `${Math.round(job.postedHoursAgo / 24)}d`}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className={`inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded border font-medium ${
+                        job.source === 'linkedin_alert' || job.source === 'linkedin_digest'
+                          ? 'bg-sky-500/15 text-[#38BDF8] border-sky-500/30'
+                          : job.source === 'naukri_alert' || job.source === 'naukri_webhook'
+                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : job.source.includes('greenhouse') || job.source.includes('lever') || job.source.includes('ashby')
+                          ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
+                          : 'bg-white/5 text-slate-300 border-white/10'
+                      }`}>
+                        {formatSourceLabel(job.source)}
+                      </span>
+                      <span className="text-slate-500 text-[10px]">&bull;</span>
+                      <span className="text-slate-400 text-[11px] font-mono">
+                        {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h` : `${Math.round(job.postedHoursAgo / 24)}d`}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1012,8 +1246,16 @@ export default function MorningRadarPage() {
                     <td className="py-2 px-3">
                       <ThreeDoorsChips door1={job.door1} door2={job.door2} door3={job.door3} />
                     </td>
-                    <td className="py-2 px-3 text-xs font-mono text-slate-400">
-                      {job.source}
+                    <td className="py-2 px-3 text-xs">
+                      <span className={`inline-flex items-center font-mono text-[11px] px-2 py-0.5 rounded border font-medium ${
+                        job.source === 'linkedin_alert' || job.source === 'linkedin_digest'
+                          ? 'bg-sky-500/15 text-[#38BDF8] border-sky-500/30'
+                          : job.source === 'naukri_alert' || job.source === 'naukri_webhook'
+                          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : 'bg-[#161F33] text-slate-300 border-white/10'
+                      }`}>
+                        {formatSourceLabel(job.source)}
+                      </span>
                     </td>
                     <td className="py-2 px-3 text-xs font-mono text-right text-slate-400">
                       {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h` : `${Math.round(job.postedHoursAgo / 24)}d`}
