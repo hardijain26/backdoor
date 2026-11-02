@@ -41,15 +41,15 @@ export function CadenceCard({ item, onTransition }: CadenceCardProps) {
 
   const doorConfig = {
     door1: {
-      label: 'Door 1: Decision Maker',
+      label: '🛤️ Pathway 1: Decision Maker',
       color: 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30',
     },
     door2: {
-      label: 'Door 2: Recruiter',
+      label: '🛤️ Pathway 2: Recruiter',
       color: 'bg-[#0284C7]/15 text-[#38BDF8] border-[#0284C7]/30',
     },
     door3: {
-      label: 'Door 3: Peer / Ally',
+      label: '🛤️ Pathway 3: Peer / Ally',
       color: 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30',
     },
   }[item.door];

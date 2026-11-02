@@ -15,15 +15,19 @@
 
 | Task ID | Task Title | Subsystem | Target Branch | Status | Owner |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `SCR-T01` | Role & Product-Line Scoping Engine | `@intel/teardown` (M5) | `feature/p4-intel-scoper` | `PLANNED` | Backend Lead |
-| `SCR-T02` | Multi-Channel Review Auditor (`S4-T02`) | `@intel/teardown` (M5) | `feature/p4-intel-review-auditor` | `PLANNED` | Fullstack Lead |
-| `SCR-T03` | Plain-English Financial Translator & Leadership Compass | `@intel/teardown` (M5) | `feature/p4-intel-financial-translator` | `PLANNED` | Backend Lead |
-| `SCR-T04` | Product-Scoped Competitor SWOT & VoC Synthesizer | `@intel/teardown` (M5) | `feature/p4-intel-swot-voc` | `PLANNED` | Backend Lead |
-| `SCR-T05` | Universal Semantic Grammar & Dual-Track Blueprint | `@intel/teardown` (M5) | `feature/p4-intel-semantic-grammar` | `PLANNED` | Fullstack Lead |
-| `SCR-T06` | Zero-Migration Database Persistence Service | `database` / `@intel/teardown` | `feature/p4-intel-zero-db-persistence` | `PLANNED` | Backend Lead |
-| `SCR-T07` | Headless Google Docs Executive 1-Pager Exporter (`S4-T03`) | `@workspace/gdocs` (M7) | `feature/p4-intel-gdocs-exporter` | `PLANNED` | Fullstack Lead |
-| `SCR-T08` | Dossier Drawer Tab 3 UI ("Intel & Teardown") Suite | `frontend/dossier` (M4) | `feature/p4-intel-drawer-tab3-ui` | `PLANNED` | Frontend Lead |
-| `SCR-T09` | In-Drawer AI Copilot Panel & Role Sparring (`S4-T06`) | `frontend/copilot` (M5) | `feature/p4-intel-copilot-sparring` | `PLANNED` | Fullstack Lead |
+| `SCR-T01` | Role & Product-Line Scoping Engine | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T02` | Multi-Channel Review Auditor (`S4-T02`) | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Fullstack Lead |
+| `SCR-T03` | Plain-English Financial Translator & Leadership Compass | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T04` | Product-Scoped Competitor SWOT & VoC Synthesizer | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T05` | Universal Semantic Grammar & Dual-Track Blueprint | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Fullstack Lead |
+| `SCR-T06` | Zero-Migration Database Persistence Service | `database` / `@intel/teardown` | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T07` | Multi-Asset Google Workspace Exporters (Docs, Sheets & Slides) | `@workspace/google` (M7) | `feature/p7-company-research-teardown` | `COMPLETED` | Fullstack Lead |
+| `SCR-T08` | Dossier Drawer Tab 3 UI ("Intel & Teardown") Suite | `frontend/dossier` (M4) | `feature/p7-company-research-teardown` | `COMPLETED` | Frontend Lead |
+| `SCR-T09` | In-Drawer AI Copilot Panel & Role Sparring (`S4-T06`) | `frontend/copilot` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Fullstack Lead |
+| `SCR-T10` | Just-In-Time (JIT) Interview State Trigger Gate | `@outreach/kanban` (M3) | `feature/p7-company-research-teardown` | `COMPLETED` | Fullstack Lead |
+| `SCR-T11` | Asynchronous 20-Min Research Worker & Polling API | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T12` | 7-Pillar RapidAPI Free-Tier Connectors | `@intel/teardown` (M5) | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
+| `SCR-T13` | Zero-Migration Supabase Client Persistence | `database` / `@intel/teardown` | `feature/p7-company-research-teardown` | `COMPLETED` | Backend Lead |
 
 ---
 
@@ -133,6 +137,50 @@
   - [ ] Quick-action prompt chips (e.g., *"Simulate 5-minute case interview question"*).
   - [ ] "Copy Response" and "Pin to Interview Notes" buttons persist directly to `meeting_notes`.
 - **Verification:** `npm run test:unit tests/frontend/copilot-chat.test.tsx`.
+
+---
+
+### Task `SCR-T10`: Just-In-Time (JIT) Interview State Trigger Gate
+- **Objective:** Gate computationally expensive LLM synthesis, 3 diagnostic questions, and Google Slides deck until an interview call is scheduled.
+- **Scope:** `src/components/outreach/KanbanBoard.tsx`, `src/app/api/cadence/transition/route.ts`, `src/components/dossier/TeardownTab.tsx`.
+- **Acceptance Criteria:**
+  - [x] When opportunity transitions to `IN_CONVERSATION` or `INTERVIEW_SCHEDULED`, unlock the "Generate Interview Teardown" action.
+  - [x] Before interview confirmation, Tab 3 displays lightweight company firmographics and fit score, saving 90% of LLM compute.
+  - [x] Includes manual override button: *"Unlock Interview Prep Teardown"*.
+- **Verification:** Unit test state transition triggers and check that deep synthesis is skipped for cold outreach stages.
+
+---
+
+### Task `SCR-T11`: Asynchronous 20-Min Research Worker & Status Polling
+- **Objective:** Prevent HTTP timeout errors on serverless hosting (Vercel/Cloud Run) during multi-channel crawls across SEC 10-K, Reddit, and G2.
+- **Scope:** `src/app/api/intel/research/start/route.ts`, `src/app/api/intel/research/status/route.ts`.
+- **Acceptance Criteria:**
+  - [x] `POST /api/intel/research/start` returns `202 Accepted` with unique `jobId` in $\le 500\text{ ms}$.
+  - [x] `GET /api/intel/research/status?jobId=...` reports progress across 5 stages (Scoping $\rightarrow$ Financials $\rightarrow$ Friction $\rightarrow$ Competitors $\rightarrow$ Synthesis).
+  - [x] Prevents duplicate crawls via mutex locking on `company_id`.
+- **Verification:** Simulated background crawl completes and updates Supabase state without HTTP timeout.
+
+---
+
+### Task `SCR-T12`: 7-Pillar RapidAPI Free-Tier Connectors
+- **Objective:** Integrate single-key RapidAPI endpoints (`X-RapidAPI-Key`) for non-blocking financial filings, domain traffic, and review auditing.
+- **Scope:** `src/engine/review-scraper.ts`, `src/engine/financial-translator.ts`.
+- **Acceptance Criteria:**
+  - [x] Connects Financial Modeling Prep (FMP) / Yahoo Finance API for live margins and R&D expense.
+  - [x] Connects SimilarWeb API for monthly domain visits, bounce rates, and traffic sources.
+  - [x] Respects free-tier rate limits and falls back to deterministic catalogs when quota is reached.
+- **Verification:** API test script verifies clean JSON response parsing under free quotas.
+
+---
+
+### Task `SCR-T13`: Zero-Migration Supabase Client Persistence
+- **Objective:** Replace serverless in-memory `Map` in `teardown.ts` with direct Supabase client persistence.
+- **Scope:** `src/engine/teardown.ts`.
+- **Acceptance Criteria:**
+  - [x] `getOrFetchCompanyDataProduct()` reads and upserts directly to `public.company_briefs`.
+  - [x] `getOrGenerateRoleTeardown()` reads and upserts to `public.evaluations`.
+  - [x] Honors 30-day cache TTL anchor (`fetched_at`) for sub-second loads across multiple users.
+- **Verification:** `npm run test:node tests/teardown.test.ts`.
 
 ---
 

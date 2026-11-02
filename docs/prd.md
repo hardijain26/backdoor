@@ -74,11 +74,11 @@ Every module requirement and automated background job must strictly follow these
 ## 3. End-to-End User Journeys
 
 ### Journey 1: Morning Discovery & Triage (Target: $\le 15$ mins)
-1. **04:00 AM IST:** Automated cron runs Module 2 across 35 sources, normalizes, deduplicates, and evaluates all new jobs against Hardi's active tracks.
-2. **08:00 AM IST:** Hardi opens Backdoor on desktop. The **Morning Radar** displays the top 20 new roles scored $\ge 70$.
+1. **04:00 AM IST:** Automated cron runs Module 2 across 35 sources, normalizes, deduplicates, and evaluates all new jobs against Hardi's active tracks. (Note: On initial first-time user login, an automated 15-day backfill crawl executes immediately).
+2. **08:00 AM IST:** Hardi opens Backdoor on desktop. The **Morning Radar** displays opportunities ranked strictly by match score (highest to lowest), with dedicated view tabs for **Active Roles**, **Skipped Roles** (with 1-click restore), and **All Scored Opportunities**.
 3. **Keyboard Triage:** Hardi switches to the **Dense Command Table** (`j`/`k` navigation).
    * Reads match breakdown, tags, and Door chips.
-   * Pressing `s` skips uninteresting roles.
+   * Pressing `s` skips uninteresting roles (moves to Skipped archive; next best match automatically advances).
    * Pressing `c` marks high-conviction roles as `CHOSEN`.
    * Pressing `Enter` opens the $640\text{px}$ slide-out dossier drawer.
 
@@ -172,16 +172,27 @@ Every module requirement and automated background job must strictly follow these
 *   Deduplication engine, pre-storage filters, and polite close-checking.
 
 #### 2. Detailed Functional Requirements
-*   **M2-FR1 (P0) Scheduled Execution:**
-    *   Runs autonomously at 04:00 AM in the user's timezone (04:00 IST).
+*   **M2-FR1 (P0) Scheduled Execution & Two-Tier Lookback Windows:**
+    *   **First-Time User Login (Initial 15-Day Backfill Crawl):** When a user logs in for the first time (`user.last_crawled_at IS NULL`), Module 2 triggers an automated deep backfill crawl covering the past 15 days (360 hours) across all 35 sources (direct ATS, remote PM boards, tech communities). This ensures newly onboarded candidates receive an abundant, scored opportunity pool immediately rather than an empty screen.
+    *   **Subsequent Daily Incremental Crawls:** Runs autonomously at 04:00 AM in the user's timezone (04:00 IST) with an incremental 24-hour delta (`lookbackHours: 24` or since `user.last_crawled_at`), ingesting newly published roles without duplicate fetching.
+    *   **Crawl Window Configuration (`getCrawlWindow`):** Dynamically computes `lookbackDays` (15 days vs 1 day) and `sinceTimestamp` based on user onboarding status.
     *   Backup watchdog runner fires at 04:45 AM if the 04:00 AM run failed to complete.
     *   Saturday 03:00 AM snapshot run computes open role counts per company to feed Hiring Trends.
-*   **M2-FR2 (P0) Ingestion Toggles & Health:**
-    *   Every source has an on/off toggle and encrypted API key field in Settings.
-    *   Tracks status (`HEALTHY`, `FAILED`, `SKIPPED: NO KEY`), run duration, and jobs found.
-*   **M2-FR3 (P0) Pre-Storage Negative Filters:**
-    *   Drops postings before saving if title matches exclusion regex (e.g., *Product Marketing Manager*, *Engineering Manager*).
-    *   Drops postings if company or description matches excluded industries: **FinTech, Payments, Crypto, Neo-banking**.
+*   **M2-FR2 (P0) Tri-Segmented Ingestion Fleet & Source Toggles:**
+    *   Every source has an on/off toggle and encrypted API key field in Settings, partitioned into three structural tiers:
+        1.  **Popular ATS Systems (Role-Agnostic Core):** 8 direct ATS crawlers (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, BambooHR, Rippling, Recruitee) + Careers JSON-LD crawler. Global master switch ("Enable / Disable All ATS") provides 1-click control.
+        2.  **Platform-Specific APIs & Community Boards (Multi-Role Domain Architecture):**
+            *   *Role Categorization & Persona Packs:* Curated feeds tagged by discipline: Product Management (Lenny's Jobs, Mind the Product, Product Hunt), Software Engineering (Hacker News "Who is Hiring", BuiltIn, Levels.fyi), Design & UX (Dribbble Jobs, UX Jobs Board, Behance), Legal & Compliance (GoInhouse, ACC Career Center), and Finance & Accounting (eFinancialCareers, Accountingfly).
+            *   *Dynamic Candidate Track Interpolation:* Platform aggregators (RapidAPI JSearch, SerpApi Google Jobs, Apollo Jobs) dynamically interpolate target titles from the candidate's active Dynamic Tracks (`track.targetTitles`: e.g. "Staff UX Designer", "Corporate Counsel", "Controller", "Senior Backend Engineer") rather than querying hardcoded PM keywords.
+        3.  **Public Social, Community & Inbound Messaging Streams:**
+            *   *Public Twitter / X Accounts:* Users configure monitored public handles (e.g. `@levelsio`, `@rauchg`, `@designerhire`, VC talent partners) stored in `monitoredTwitterHandles: string[]`. Ingests tweets via Apify Twitter Actor (BYOK) or official Twitter API v2 bearer token. Tweets matching hiring keywords (`hiring`, `open role`, `join us`, `apply`) are parsed via `safe-fetch.ts` (`extractJobFromSnippet`).
+            *   *LinkedIn Job Alert Emails:* Auto-forwarded digests received at `jobs+<uid>@inbound.<domain>`. Multi-job HTML parser extracts title, company, location, badges, and canonical `linkedin.com/jobs/view/...` URLs after stripping tracking query parameters.
+            *   *Naukri India Job Alert & Recruiter Emails:* Tailored parser for the Indian tech hiring market. Handles Indian metro hubs (Bengaluru, NCR/Gurgaon/Noida, Hyderabad, Pune, Mumbai, Chennai), parses CTC compensation in Indian denominations (`₹20 - 45 Lacs P.A.`, `LPA`), unwraps Naukri redirect tokens, and extracts recruiter profiles for Door 2 Recruiter enrichment.
+            *   *Slack Community Hiring Channels:* Ingests real-time job posts from role and founder Slack communities (e.g. Lenny's Community, Mind the Product, Tech Workers Club, YC Founder Slack `#jobs` and `#hiring` channels) via Backdoor Slack App bot token (`channels:history`), channel webhooks, or direct snippet ingestion (`Shift + I`).
+    *   Tracks status (`HEALTHY`, `FAILED`, `SKIPPED: NO KEY`), run duration, and jobs found across all enabled sources.
+*   **M2-FR3 (P0) Dynamic Pre-Storage Negative Filters:**
+    *   Drops postings before saving if title matches user-defined exclusion patterns (`excludedTitlePatterns` in Settings), replacing legacy hardcoded PM exclusions.
+    *   Drops postings if company or description matches user-configured blocked industries (`blockedIndustries` in Settings, default: **FinTech, Payments, Crypto, Neo-banking**).
 *   **M2-FR4 (P0) Normalization:**
     *   Normalizes raw HTML/JSON into 13 canonical fields: title, normalized title, company, domain, locations array, region, workplace (`remote`, `hybrid`, `on-site`), posted date, salary raw, seniority, specializations, apply URL, and clean description text.
 *   **M2-FR5 (P0) Deduplication Engine:**
@@ -192,9 +203,17 @@ Every module requirement and automated background job must strictly follow these
 *   **M2-FR8 (P0) Universal Ingest Modal:**
     *   Accepts any careers URL, LinkedIn job URL, raw Slack/WhatsApp text, or tweet URL.
     *   Parses schema.org `JobPosting` JSON-LD, OpenGraph, or uses regex/LLM parsing. Shows preview card before saving.
-*   **M2-FR13 (P1) Inbound Webhooks (Naukri & Google Alerts):**
-    *   User forwards job alerts to `jobs+<uid>@inbound.<domain>`.
-    *   Cloudflare Email Routing + Worker extracts subject, body, unwraps Google redirect URLs, and posts to `/api/webhooks/inbound-mail`.
+*   **M2-FR13 (P0) Inbound Email Digest Engines (LinkedIn Alerts, Naukri India & Google Alerts):**
+    *   *Dedicated Routing Address:* Each candidate workspace receives a dedicated email inbound address `jobs+<uid>@inbound.<domain>` provisioned via Cloudflare Email Routing + Worker, routing payloads to `/api/webhooks/inbound-mail`.
+    *   *LinkedIn Email Digest Parser:* Parses batch job alert notifications from LinkedIn. Isolates job cards, cleans tracking redirect parameters (`trk=`, `trkInfo=`), and creates canonical `linkedin.com/jobs/view/...` postings.
+    *   *Naukri India Hiring Parser:* Designed specifically for Indian tech hiring dynamics:
+        *   Extracts CTC compensation ranges formatted in Lacs/LPA (`₹20 - 40 Lacs P.A.`, `18-30 LPA`).
+        *   Normalizes Indian metropolitan tech clusters (`Bengaluru / Bangalore`, `Delhi / NCR / Gurgaon / Noida`, `Hyderabad / Secunderabad`, `Pune`, `Mumbai`, `Chennai`).
+        *   Unwraps Naukri redirection tokens to extract genuine apply links and parses recruiter profiles for automatic Door 2 Recruiter lead enrichment.
+*   **M2-FR16 (P1) Slack Community Channel Ingestion Engine:**
+    *   *Channel Listener:* Integrates with candidate-joined professional Slack communities (e.g. Lenny's Newsletter community, Mind the Product, Tech Workers Club, Designers Guild, YC Founders) across designated hiring channels (`#jobs`, `#hiring`, `#job-board`).
+    *   *Integration Architecture:* Listens via Backdoor Slack App bot token (`channels:history` permission) or channel incoming webhooks.
+    *   *Unstructured Message Extraction:* Ingests raw chat messages, parsing hiring announcements, founder/recruiter contact handles, role titles, and application URLs using `extractJobFromRawText()` and regex pattern heuristics.
 *   **M2-FR14 (P0) Standardized Inbound Bulk Upload Pipeline (.csv & .xlsx):**
     *   *Standardized 6-Column Schema:* Dedicated inbound ingestion pipeline accepting `.csv` (RFC 4180) and `.xlsx` files adhering strictly to 6 canonical columns:
         1. `company_name` (string, required, normalized)
@@ -424,14 +443,20 @@ Every module requirement and automated background job must strictly follow these
 *   Strict adherence to the **Precision Cobalt & Steel** design system (zero indigo/orange).
 
 #### 2. Detailed Functional Requirements
-*   **M9-FR1 (P0) Morning Radar:**
-    *   Prioritized feed of new roles ($\ge 70$ fit score) discovered in the morning run. Capped at 20 roles by default.
+*   **M9-FR1 (P0) Morning Radar & Status Management:**
+    *   **Continuous Match Score Ranking:** Prioritized feed of matching roles across all free ATS sources (Greenhouse, Lever, Ashby, YC, etc.) and inbound clippers, strictly ranked by Match Score descending (highest fit first).
+    *   **Three-State View Switcher:**
+        *   *Active Roles (Default):* Displays all unskipped roles. When top-scoring roles are skipped, the feed dynamically advances next-in-line scored opportunities so the candidate is never blocked or starved of roles.
+        *   *Skipped Roles:* Dedicated archive of all hidden/skipped roles with a 1-click **`Restore ↺`** action that reverts `stage = 'DISCOVERED'`, immediately reinstating the opportunity in active triage and pipeline.
+        *   *All Scored Pool:* Complete catalog of all discovered opportunities across all sources with their respective status badges (`DISCOVERED`, `CHOSEN`, `SKIPPED`).
+    *   **Crawl Scope Switcher:** UI toggle between `⚡ 15-Day Discovery (First Login)` and `Past 24 Hours (Daily Crawl)`.
+    *   **Density Focus Selector:** Toggle between `Top 12 Focus` (compact triage) and `All Opportunities` (complete inventory without artificial cutoffs).
 *   **M9-FR2 (P0) Dual-View Switcher:**
     *   Seamless toggle between 1:1 Bento Cards and Dense Command Table without state loss.
 *   **M9-FR3 (P0) Mouse-Free Keyboard Navigation:**
     *   `j`/`k`: Navigate rows.
     *   `Enter`: Open drawer.
-    *   `s`: Skip role (mark `SKIPPED`).
+    *   `s`: Skip role (marks `SKIPPED`, animates out of Active into Skipped archive; next best match automatically advances).
     *   `c`: Choose role (mark `CHOSEN`).
     *   `/`: Focus search filter.
     *   `Esc`: Close drawer / clear search.
@@ -450,6 +475,16 @@ Every module requirement and automated background job must strictly follow these
     *   *Batch Guardrail Badge:* Prominent visual badge enforcing "Max 50 roles per batch".
     *   *Pre-Import Validation Error Table:* Interactive preview table rendering exact row numbers, field names, and validation failure reasons if invalid columns, missing required cells, or invalid workplace types are detected.
     *   *Immediate Pipeline Refresh:* Upon successful upload, triggers M3 scoring and performs an optimistic, non-reloading update to the Morning Radar and Dense Command Table.
+*   **M9-FR14 (P0) Tri-Segmented Source Settings Workspace:**
+    *   *Three Structured Sections:* Divides the `/settings` Source Toggles tab into 3 card sections:
+        1.  **Popular ATS Systems:** Lists Greenhouse, Lever, Ashby, Workable, SmartRecruiters, BambooHR, Rippling, Recruitee, and Careers JSON-LD with individual switches and a master "Toggle All ATS" button.
+        2.  **Platform & Community Feeds (Multi-Role):** Filter pills (`All`, `Product`, `Engineering`, `Design & UX`, `Legal & Compliance`, `Finance & Accounting`) to inspect role-specific boards and dynamic search APIs powered by candidate track titles.
+        3.  **Public Social, Community & Inbound Messaging Streams:**
+            *   *Public Twitter / X Account Manager:* Dedicated interactive `@handle` tag editor with chip add/remove controls.
+            *   *LinkedIn Email Inbound Digest Card:* Displays personalized `jobs+<uid>@inbound.<domain>` forwarding address with 1-click copy and auto-forwarding rule setup instructions.
+            *   *Naukri India Forwarder Card:* Inbound configuration with Indian currency (Lacs/LPA) and metro location filters.
+            *   *Slack Community Channel Connector:* Interface to connect Slack community channels (`#jobs`, `#hiring`), manage webhook tokens, and toggle real-time message stream listening.
+            *   *Chrome Extension Clipper Status:* Token status, version check, and 1-click install link.
 *   ~~**Google Sheet UI Indicators & Widgets:**~~
     *   ~~Google Sheet sync status indicator, "Sync to Sheet Now" action button, and external Google Sheet link widgets on `/health` and command workspace headers are permanently eliminated.~~
 

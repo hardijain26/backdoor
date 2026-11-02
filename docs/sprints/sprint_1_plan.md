@@ -25,16 +25,18 @@
 ## 3. Detailed Task Specifications & Acceptance Criteria
 
 ### Task `S1-T01`: 35-Source Ingestion Crawler Runners & SSRF Guard (Rule R6)
-- **Objective:** Establish the 35 verified ingestion sources across 6 categories (ATS Direct, Company Direct, Remote PM Boards, Curated Tech Communities, Direct Inbound/Clippers, and BYOK Aggregators). Enforce SSRF protection (`safe-fetch`) blocking private subnets and link-local IPs, and implement pre-storage negative filters dropping non-PM and FinTech postings.
-- **Subsystem & Scope:** Subsystem 4 (`@ingest/scout` M2), `src/engine/scraper.ts`, `tests/core.test.ts`.
+- **Objective:** Establish the 35 verified ingestion sources across 6 categories (ATS Direct, Company Direct, Remote PM Boards, Curated Tech Communities, Direct Inbound/Clippers, and BYOK Aggregators). Enforce SSRF protection (`safe-fetch`) blocking private subnets and link-local IPs, implement pre-storage negative filters dropping non-PM and FinTech postings, and configure two-tier crawl windows (15-day initial onboarding backfill vs. 24h daily incremental crawl).
+- **Subsystem & Scope:** Subsystem 4 (`@ingest/scout` M2), `src/engine/scraper.ts`, `tests/core.test.ts`, `tests/frontend/radar-status-and-crawl-scope.test.tsx`.
 - **Acceptance Criteria:**
   - [x] All 35 verified ingestion sources defined across the 6 canonical categories.
   - [x] SSRF protection blocks loopback (`127.0.0.1`, `localhost`), link-local (`169.254.169.254`), and private subnets (`10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12`).
   - [x] User-Agent set to `ThreeDoorsBot/1.0 (+https://threedoors.app/bot)`.
   - [x] Pre-storage negative filters drop titles matching `/(marketing|engineering manager|tpm|scrum|recruiter)/i`.
   - [x] Pre-storage negative filters drop companies/descriptions matching `/(fintech|payments|crypto|web3|neo-?bank|lending|p2p)/i`.
+  - [x] Two-tier crawl window engine (`getCrawlWindow`) configured for 15-day (360h) lookback on first-time onboarding and 24h incremental lookback on daily runs.
 - **Test & Verification Steps:**
   - Unit Test: `npm run test:node tests/core.test.ts` (Passed - 9/9 tests green)
+  - Crawl Window Test: `npx tsx --test tests/frontend/radar-status-and-crawl-scope.test.tsx` (Passed - 2/2 tests green)
 
 ### Task `S1-T02`: Canonical Deduplication Engine (`dedup_match_key`)
 - **Objective:** Implement the canonical deduplication engine generating `dedup_match_key = clean_company(company) + ':' + clean_title(title)` and merging multi-city postings into a unified canonical row.
@@ -57,19 +59,23 @@
 - **Test & Verification Steps:**
   - Unit Test: `npm run test:node tests/core.test.ts` (Passed)
 
-### Task `S1-T04`: Morning Radar UI Screen, Dual-View Switcher & Keyboard Engine
-- **Objective:** Build the interactive Morning Radar screen at `/radar`, supporting the Top 20 24h roles, in-place expansion toggle, dual 1:1 Bento Cards vs Dense Table switcher, single-key keyboard engine (`j`, `k`, `Enter`, `s`, `c`, `/`, `Esc`), and Three Doors indicator chips.
-- **Subsystem & Scope:** Subsystem 2 (`@ui/command-center`), `src/app/radar/page.tsx`, `src/components/useTableKeyboardNav.ts`, `src/components/ThreeDoorsChips.tsx`, `tests/frontend/dense-table-keyboard.test.tsx`, `tests/frontend/view-switcher.test.tsx`.
+### Task `S1-T04`: Morning Radar UI Screen, Continuous Match Ranking & Status Recovery
+- **Objective:** Build the interactive Morning Radar screen at `/radar`, supporting continuous match score ranking, a 3-state status view switcher (`Active`, `Skipped`, `All`), 1-click restore for skipped roles, 15-day onboarding backfill vs 24h daily crawl scope toggle, dual 1:1 Bento Cards vs Dense Table switcher, single-key keyboard engine (`j`, `k`, `Enter`, `s`, `c`, `/`, `Esc`), and Three Doors indicator chips.
+- **Subsystem & Scope:** Subsystem 2 (`@ui/command-center`), `src/app/radar/page.tsx`, `src/components/useTableKeyboardNav.ts`, `src/components/ThreeDoorsChips.tsx`, `tests/frontend/dense-table-keyboard.test.tsx`, `tests/frontend/view-switcher.test.tsx`, `tests/frontend/radar-status-and-crawl-scope.test.tsx`.
 - **Acceptance Criteria:**
-  - [x] Morning Radar banner renders Top 20 capped roles discovered within 24 hours (`fit_score >= 70`).
-  - [x] In-place expansion button unlocks full role list without page reload.
-  - [x] Dual-view switcher toggles between 1:1 Bento cards ($320\text{px} \times 320\text{px}$) and Dense Command Table with state preservation.
+  - [x] Continuous match score ranking dynamically surfaces highest-fit opportunities first; skipping top roles dynamically refuels the queue with next-in-line scored opportunities.
+  - [x] 3-state status tab switcher: `Active Roles` (default), `Skipped Roles` (review & restore), and `All Scored Pool`.
+  - [x] 1-click `Restore ↺` action in Skipped view returns roles to `DISCOVERED` state and reinstates them into the active queue.
+  - [x] Crawl Scope selector toggles between `⚡ 15-Day Discovery (First Login)` and `Past 24 Hours (Daily Crawl)`.
+  - [x] Density Focus selector toggles between `Top 12 Focus` and `All Opportunities` without artificial cutoffs.
+  - [x] Dual-view switcher toggles between 1:1 Bento cards and Dense Command Table with state preservation.
   - [x] Keyboard navigation hook supports `j` (down), `k` (up), `Enter` (drawer), `s` (skip role with boundary clamping), `c` (choose role), `/` (search focus), `Esc` (escape priority stack).
   - [x] Modifier key collisions guarded (`Cmd+C`, `Cmd+S`, `Ctrl+C`, `Ctrl+S` ignored).
   - [x] Three Doors segmented indicator chips render D1: Founder (verified teal), D2: Recruiter, D3: Peer.
 - **Test & Verification Steps:**
   - Component Tests: `npm run test:unit tests/frontend/dense-table-keyboard.test.tsx` (Passed - IT-FE-01, IT-FE-02 green)
   - View Switcher Test: `npm run test:unit tests/frontend/view-switcher.test.tsx` (Passed - IT-FE-03 green)
+  - Radar Status & Crawl Scope Test: `npx tsx --test tests/frontend/radar-status-and-crawl-scope.test.tsx` (Passed - 2/2 green)
 
 ---
 

@@ -47,7 +47,7 @@ test('UT-DD-02: 5-Tab Architecture (Spec, Match, Intel, Doors, Draft)', () => {
   assert.ok(content.includes('1. Spec'), 'Tab 1 label must be "1. Spec"');
   assert.ok(content.includes('2. Match'), 'Tab 2 label must be "2. Match"');
   assert.ok(content.includes('3. Intel'), 'Tab 3 label must be "3. Intel"');
-  assert.ok(content.includes('4. Backdoor'), 'Tab 4 label must be "4. Backdoor"');
+  assert.ok(content.includes('4. 🛤️ Pathways') || content.includes('4. Backdoor'), 'Tab 4 label must be "4. 🛤️ Pathways" or "4. Backdoor"');
   assert.ok(content.includes('5. Outreach & CV'), 'Tab 5 label must be "5. Outreach & CV"');
 });
 

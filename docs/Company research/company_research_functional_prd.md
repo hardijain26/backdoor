@@ -1,9 +1,10 @@
 # Functional Product Requirements Document (Functional PRD)
 
 **Document Title:** Backdoor — Company Intelligence & Executive Teardown Engine (M5)  
-**Sprint Targets:** `S4-T02`, `S4-T03`, `S4-T06`  
-**Version:** 2.2.0 (Zero-Migration Production Master)  
-**Target Platform:** Next.js 15, Tailwind CSS, Supabase PostgreSQL, Google Workspace API  
+**Repository:** `hardijain26/backdoor`  
+**Sprint Targets:** `S4-T02`, `S4-T03`, `S4-T06`, `SCR-T10`, `SCR-T11`, `SCR-T12`, `SCR-T13`  
+**Version:** 3.0.0 (Just-In-Time Production Master)  
+**Target Platform:** Next.js 15, Tailwind CSS, Supabase PostgreSQL, Google Workspace API (Docs, Sheets, Slides)  
 **Database Architecture Decision:** **Zero-Migration** (Reusing existing `company_briefs` and `evaluations` JSONB columns)  
 
 ---
@@ -11,12 +12,11 @@
 ## 1. Product Overview & User Value Proposition
 
 ### 1.1 Executive Summary
-The Company Intelligence Teardown Engine transforms raw corporate filings, earnings call transcripts, and disparate multi-channel user reviews into an authoritative, actionable **Executive Value Dossier**. In under 20 seconds, candidate users receive:
-1. Product-scoped competitive intelligence.
-2. Plain-English financial translations of corporate priorities.
-3. 3 zero-solution diagnostic questions to ask the hiring manager.
-4. A departmental opportunity pitch.
-5. A dual-track 30–60–90 day execution blueprint presented as strategic options.
+The Company Intelligence Teardown Engine in **Backdoor** transforms raw corporate filings, earnings call transcripts, and multi-channel customer reviews into an authoritative, actionable **Executive Value Dossier**. 
+
+To maximize system performance and reduce LLM token costs by over 90%, the engine operates on a **Two-Stage Funnel**:
+1. **Stage 1 (Discovery & Cold Outreach):** Fast, lightweight firmographics, suitability score (0–100%), and executive contact discovery.
+2. **Stage 2 (Just-In-Time Interview Gate):** The deep 15–20 minute research crawl, executive synthesis, 3 diagnostic questions, and Google Slides presentation are triggered **ONLY when an interview call is scheduled or confirmed**, ensuring 100% data freshness and zero wasted compute.
 
 ### 1.2 The High-Value Problem Solver Paradigm
 This system fundamentally shifts candidate positioning:
@@ -52,24 +52,34 @@ This system fundamentally shifts candidate positioning:
 
 ---
 
-### Feature `S4-T03`: Executive Product Teardown 1-Pager & Google Docs Exporter
+### Feature `S4-T03`: Multi-Asset Google Workspace Exporter (Docs, Sheets & Slides)
 
 #### 2.3 User Story
-> *As a candidate, I want Backdoor to synthesize the company's business model and customer complaints into a structured 1-pager and export it to my Google Drive, so that I can bring an executive-ready proposal into my interview.*
+> *As a candidate with an upcoming interview, I want Backdoor to synthesize the company's business model, customer complaints, and my verified proof points into a Google Doc 1-pager, a 6-slide Google Slides executive deck, and a 3-tab Google Sheet tracker in my Google Drive, so that I can bring an executive-ready proposal into my interview.*
 
 #### 2.4 Functional Requirements
 * **FR-2.1 Phased Proposal Cards:**
   * Render 3 structured proposal cards inside Tab 3 of the Dossier Drawer:
-    1. **Horizon 1 (Quick Win — Days 0–30):** Immediate operational triage addressing the \#1 customer friction point.
+    1. **Horizon 1 (Quick Win — Days 0–30):** Immediate operational triage addressing the #1 customer friction point.
     2. **Horizon 2 (Multiplier — Days 30–60):** System or workflow optimization multiplying retention or team velocity.
     3. **Horizon 3 (Strategic Moat — Days 60–90+):** Scalable monetization or competitive defense initiative.
   * Each card displays: `Problem Diagnosis` $\rightarrow$ `Proposed Action` $\rightarrow$ `Expected Metric/KPI`.
-* **FR-2.2 Google Docs One-Click Exporter:**
-  * Render a primary CTA button: **"Open Teardown in Google Docs"**.
-  * On click, invoke the backend Google Docs generator (`docs.create` and `documents.batchUpdate`).
-  * Open the newly generated document in a new browser tab using authenticated Drive URL.
-  * Save Google Doc reference to `public.company_briefs.funding_details`.
-* **FR-2.3 Proposal Regeneration:**
+* **FR-2.2 Google Workspace Multi-Asset Exporter:**
+  * **Google Doc 1-Pager:** Executive narrative with Discrepancy Statement, 3 Diagnostic Questions, and Horizon proposals.
+  * **Google Slides Deck (6 Slides):** 16:9 widescreen presentation containing:
+    * *Slide 1:* Executive Scope (Candidate $\times$ Target Company $\times$ Role)
+    * *Slide 2:* The Discrepancy Hook (Corporate Narrative vs. User Friction)
+    * *Slide 3:* Horizon 1–3 Friction Triage Mapped to Verified Candidate Proof Points
+    * *Slide 4:* Dual-Track 30–60–90 Day Execution Blueprint (Velocity Path vs. Scalability Path)
+    * *Slide 5:* 3 Zero-Solution Diagnostic Questions for the Hiring Manager
+    * *Slide 6:* Strategic Moat & Collaborative Engagement Model
+  * **Google Sheets Master Tracker (3 Tabs):** Tab 1: Research Master Reference; Tab 2: Candidate Research Tracker; Tab 3: RapidAPI Free Integrations.
+* **FR-2.3 One-Click Export CTAs:**
+  * Primary CTA: **"Open Teardown in Google Docs"**.
+  * Secondary CTA: **"Open Executive Deck in Google Slides"**.
+  * Third CTA: **"Open Research Tracker in Google Sheets"**.
+  * Saves generated document references directly into `public.company_briefs.funding_details` and `public.evaluations.tier2_breakdown`.
+* **FR-2.4 Proposal Regeneration:**
   * Display a "Regenerate Proposals" button with a dropdown allowing the candidate to select a strategic focus: *Retention Focus*, *Monetization Focus*, or *Technical Debt Triage*.
 
 ---
@@ -162,6 +172,35 @@ This system fundamentally shifts candidate positioning:
   * `[VERIFIED: REVIEW CONSENSUS (N=X)]` (Emerald Badge — Tier 2)
   * `[INFORMED INFERENCE]` (Purple Badge — Tier 3)
 * **FR-9.2 Citation Links:** Clicking any badge opens a modal showing source URL, publication date, and verbatim quote.
+
+---
+
+### Feature FR-10: Just-In-Time (JIT) Interview Gate & Activation
+
+#### 2.13 Functional Requirements
+* **FR-10.1 Two-Stage Pipeline Architecture:**
+  * **Stage 1 (Discovery & Ingestion):** Compute only lightweight firmographics, suitability score (0–100%), and executive contacts. Deep crawls are NOT triggered.
+  * **Stage 2 (Interview Trigger):** Deep 15–20 minute crawl, 3 diagnostic questions, and Google Slides deck are triggered **exclusively upon interview activation**.
+* **FR-10.2 Trigger Mechanisms:**
+  * *Trigger A:* Opportunity card dragged into `IN_CONVERSATION` or `INTERVIEW_SCHEDULED` on `/outreach` Kanban.
+  * *Trigger B:* Meeting entry created in `public.meeting_notes`.
+  * *Trigger C:* Candidate manually clicks *"Unlock Interview Teardown"* inside Tab 3.
+* **FR-10.3 Business Impact:** Eliminates 90% of wasted LLM tokens and API calls on uncontacted roles and guarantees 100% data freshness on interview day.
+
+---
+
+### Feature FR-11: 7-Pillar Company Intelligence Architecture
+
+#### 2.14 Functional Requirements
+* **FR-11.1 Pillar Coverage:**
+  1. *Pillar 1: Corporate Identity & Product Scope* (Age, HQ, Leadership density, Product catalog)
+  2. *Pillar 2: Financial Health & Capital Structure* (ARR, YoY growth, margins, funding, runway)
+  3. *Pillar 3: Strategic Priorities & Executive Compass* (1–3 year OKRs, R&D reinvestment)
+  4. *Pillar 4: Customer Friction & Voice of Customer* (Sentiment score, Top 5 friction cards)
+  5. *Pillar 5: Internal Culture & Talent Health* (Employee ratings, headcount volatility, tech stack)
+  6. *Pillar 6: Competitive Landscape & Web Intel* (Domain traffic, SERP ads, 16-point SWOT)
+  7. *Pillar 7: Role Intelligence & Success KPIs* (Scorecard KPIs, team size, compensation band)
+* **FR-11.2 Single-Key RapidAPI Fallback Fleet:** Ingests non-blocking metrics via RapidAPI key (`financial-modeling-prep`, `similarweb-data`, `trustpilot-scraper`, `rockapi/company-enrichment`).
 
 ---
 

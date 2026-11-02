@@ -61,8 +61,8 @@ test('IT-OUTREACH-02: CadenceCard component rendering with Door chip and CTAs', 
     <CadenceCard item={mockCadenceItem} onTransition={async () => {}} />
   );
 
-  // Door chip
-  assert.ok(html.includes('Door 1: Decision Maker'));
+  // Pathway / Door chip
+  assert.ok(html.includes('Pathway 1: Decision Maker') || html.includes('Door 1: Decision Maker'));
   assert.ok(html.includes('Step') && html.includes('/3'));
 
   // Company and contact

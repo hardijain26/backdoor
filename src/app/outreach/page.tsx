@@ -149,7 +149,7 @@ export default function OutreachPage() {
             </span>
           </div>
           <p className="text-sm text-[#94A3B8] mt-1">
-            Autonomous multi-channel touchpoint watcher across Door 1 (Execs), Door 2 (Recruiters), and Door 3 (Peers).
+            Autonomous multi-channel touchpoint watcher across Pathway 1 (Execs), Pathway 2 (Recruiters), and Pathway 3 (Peers).
           </p>
         </div>
 
@@ -166,10 +166,10 @@ export default function OutreachPage() {
           <div className="inline-flex bg-[#0F1523] border border-white/10 rounded-md p-0.5 text-xs">
             {(
               [
-                { id: 'ALL', label: 'All Doors' },
-                { id: 'door1', label: 'Door 1: Execs' },
-                { id: 'door2', label: 'Door 2: Recruiters' },
-                { id: 'door3', label: 'Door 3: Peers' },
+                { id: 'ALL', label: 'All Pathways' },
+                { id: 'door1', label: '🛤️ Pathway 1: Execs' },
+                { id: 'door2', label: '🛤️ Pathway 2: Recruiters' },
+                { id: 'door3', label: '🛤️ Pathway 3: Peers' },
               ] as const
             ).map((tab) => (
               <button

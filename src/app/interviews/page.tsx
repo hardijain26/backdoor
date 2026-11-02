@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
 import {
   InterviewRoundRecord,
   InterviewsWorkspaceState,
@@ -257,8 +256,6 @@ export default function InterviewsPage() {
 
   return (
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC]">
-      <Navbar />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header & Subtitle */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">

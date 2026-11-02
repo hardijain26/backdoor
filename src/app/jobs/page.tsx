@@ -144,8 +144,9 @@ export default function JobsPage() {
                       <div className="text-sm font-semibold text-white line-clamp-1">
                         {job.title}
                       </div>
-                      <div className="text-xs text-slate-400">
-                        {job.location} &bull; <span className="capitalize">{job.workplace}</span>
+                      <div className="text-xs text-slate-400 flex items-center justify-between flex-wrap gap-1">
+                        <span>{job.location} &bull; <span className="capitalize">{job.workplace}</span></span>
+                        {job.salary && <span className="text-[11px] font-medium text-emerald-400">{job.salary}</span>}
                       </div>
                       <div className="pt-2 border-t border-white/5 flex items-center justify-between">
                         <ThreeDoorsChips door1={job.door1} door2={job.door2} door3={job.door3} />

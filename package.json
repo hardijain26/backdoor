@@ -13,7 +13,8 @@
     "test:node": "tsx --test tests/*.test.ts tests/*.test.js",
     "test:unit": "tsx --test tests/frontend/**/*.test.tsx",
     "test:db": "node --experimental-strip-types --test tests/sql-policy-static.test.ts",
-    "test:e2e": "echo 'Playwright E2E suites ready'"
+    "test:e2e": "echo 'Playwright E2E suites ready'",
+    "intel:lab": "tsx sandbox/intel-lab/intel-lab.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

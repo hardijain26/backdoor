@@ -156,9 +156,42 @@ export function passesNegativeFilters(job: { title: string; company: string; des
 }
 
 /**
+ * Crawl Window Configuration (M2-FR1 Onboarding / Daily Incremental)
+ * First-time users look back 15 days (360 hours) across all 35 sources.
+ * Daily scheduled cron runs incrementally for the past 24 hours.
+ */
+export interface CrawlWindowConfig {
+  isFirstTimeUser: boolean;
+  lookbackDays: number; // 15 for first-time onboarding, 1 for daily incremental
+  lookbackHours: number; // 360 vs 24
+  sinceTimestamp: Date;
+}
+
+export function getCrawlWindow(isFirstTimeUser: boolean, lastCrawledAt?: Date | string | null): CrawlWindowConfig {
+  const now = new Date();
+  if (isFirstTimeUser || !lastCrawledAt) {
+    const fifteenDaysAgo = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
+    return {
+      isFirstTimeUser: true,
+      lookbackDays: 15,
+      lookbackHours: 360,
+      sinceTimestamp: fifteenDaysAgo
+    };
+  }
+  const lastCrawl = new Date(lastCrawledAt);
+  const hoursSinceLast = Math.max(1, Math.round((now.getTime() - lastCrawl.getTime()) / (1000 * 60 * 60)));
+  return {
+    isFirstTimeUser: false,
+    lookbackDays: Math.ceil(hoursSinceLast / 24),
+    lookbackHours: Math.min(hoursSinceLast, 24),
+    sinceTimestamp: lastCrawl
+  };
+}
+
+/**
  * Runner stub for source crawlers
  */
-export async function runScraper(sourceId: string): Promise<ScrapedJob[]> {
+export async function runScraper(sourceId: string, crawlConfig?: CrawlWindowConfig): Promise<ScrapedJob[]> {
   const source = VERIFIED_SOURCES.find((s) => s.id === sourceId);
   if (!source) {
     throw new Error(`Unknown source: ${sourceId}`);

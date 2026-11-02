@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
 import {
   FleetHealthSummary,
   SourceHealthRecord,
@@ -142,8 +141,6 @@ export default function HealthPage() {
 
   return (
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC]">
-      <Navbar />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header & Subtitle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
@@ -288,18 +285,18 @@ export default function HealthPage() {
               </div>
             </div>
 
-            {/* Door Yield Comparison */}
+            {/* Pathway Yield Comparison */}
             <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] font-mono">
               <div className="p-1.5 bg-black/30 rounded border border-white/5 flex items-center justify-between">
-                <span className="text-slate-400">Door 1 (Exec):</span>
+                <span className="text-slate-400">🛤️ P1 (Exec):</span>
                 <span className="text-emerald-400 font-bold">{funnel.door1.replyRatePercent}%</span>
               </div>
               <div className="p-1.5 bg-black/30 rounded border border-white/5 flex items-center justify-between">
-                <span className="text-slate-400">Door 2 (Talent):</span>
+                <span className="text-slate-400">🛤️ P2 (Talent):</span>
                 <span className="text-teal-400 font-bold">{funnel.door2.replyRatePercent}%</span>
               </div>
               <div className="p-1.5 bg-black/30 rounded border border-white/5 flex items-center justify-between">
-                <span className="text-slate-400">Door 3 (Peer):</span>
+                <span className="text-slate-400">🛤️ P3 (Peer):</span>
                 <span className="text-slate-300 font-bold">{funnel.door3.replyRatePercent}%</span>
               </div>
             </div>

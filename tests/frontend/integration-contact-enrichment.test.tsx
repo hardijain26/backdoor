@@ -9,10 +9,10 @@ test('IT-ENRICH-01: Tab 4 Three-Door Card Architecture & Target Selection', () =
   const drawerPath = path.resolve(process.cwd(), 'src/components/dossier/DossierDrawer.tsx');
   const content = fs.readFileSync(drawerPath, 'utf8');
 
-  // Verify all 3 doors are present in Tab 4
-  assert.ok(content.includes('Door 1: Hiring Manager'), 'Tab 4 must render Door 1 (Hiring Manager)');
-  assert.ok(content.includes('Door 2: Recruiter / Talent Lead'), 'Tab 4 must render Door 2 (Recruiter)');
-  assert.ok(content.includes('Door 3: Peer / Staff PM'), 'Tab 4 must render Door 3 (Peer PM)');
+  // Verify all 3 pathways/doors are present in Tab 4
+  assert.ok(content.includes('Pathway 1: Hiring Manager') || content.includes('Door 1: Hiring Manager'), 'Tab 4 must render Pathway 1 / Door 1 (Hiring Manager)');
+  assert.ok(content.includes('Pathway 2: Recruiter') || content.includes('Door 2: Recruiter'), 'Tab 4 must render Pathway 2 / Door 2 (Recruiter)');
+  assert.ok(content.includes('Pathway 3: Peer') || content.includes('Door 3: Peer'), 'Tab 4 must render Pathway 3 / Door 3 (Peer PM)');
 
   // Verify Target Selection button states
   assert.ok(content.includes('Selected Target ✓'), 'Must render selected target indicator state');

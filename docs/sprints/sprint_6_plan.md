@@ -25,6 +25,7 @@
 | **`S6-T04`** | Guarded Bulk Upload API Route (`POST /api/ingest/bulk-upload`) | Deliver `POST /api/ingest/bulk-upload` route supporting multipart/form-data, returning HTTP 400 for >50 rows and HTTP 422 with structured diagnostics. | Real-time validation error reporting and batch ingestion response. | `COMPLETED` | API Lead |
 | **`S6-T05`** | Command Center "Import Opportunities" Modal (`@ui/command-center` M9-FR13) | Support state integration with Morning Radar feed (`INITIAL_RADAR_JOBS`). | Build `src/components/ingest/ImportModal.tsx`: Precision Cobalt drag-and-drop zone, template action, error table, and optimistic refresh. Add "📥 Import" buttons to `/radar` and `/`. | `COMPLETED` | Frontend Lead |
 | **`S6-T06`** | Forensic Invariant Suite & Telemetry Regression Suite | Unit & integration tests in `tests/bulk-upload.test.ts`, `tests/frontend/bulk-import-modal.test.tsx`, and updated `tests/sheet-mirror-worker.test.ts`. | AST scanner enforcing Rule R7 (zero forbidden colors) and strict linguistic rules across all touched components. | `COMPLETED` | QA / Sentinel |
+| **`S6-T07`** | Tri-Segmented Source Fleet, Multi-Role Feeds, Inbound Streams (LinkedIn/Naukri Emails, Slack, Twitter/X) | Model role tags (`applicableRoles`) & sections on sources; dynamic track query interpolation on aggregators (JSearch, Apollo, Google Jobs); LinkedIn & Naukri India email digest parsers (LPA CTC, metro normalization); Slack `#jobs` webhook/bot stream listener; Twitter post parser pipeline via `safe-fetch.ts`. | Tri-segmented `/settings` Sources tab: (1) Popular ATS with bulk toggle, (2) Platform APIs with role filters (`Product`, `Engineering`, `Design/UX`, `Legal`, `Finance`), (3) Inbound & Social Streams (LinkedIn/Naukri email forwarding cards, Slack channel connector, Twitter handle manager). | `PLANNED` | Fullstack Lead |
 
 ---
 
@@ -100,6 +101,48 @@
   6. `UT-BULK-06`: Strict design system AST color check (zero forbidden colors).
   7. `IT-IMPORT-01` to `03`: Frontend SSR rendering, keyboard dismissal, and color audit.
   8. `UT-SM-01` to `05`: Decommissioning of outbound sheet sync and retention of audit telemetry.
+
+---
+
+### Feature `S6-T07`: Tri-Segmented Source Fleet, Multi-Role Feeds & Inbound Streams (LinkedIn/Naukri Emails, Slack, Twitter/X)
+- **Objective:** Modernize Settings source controls by partitioning the ingestion fleet into 3 logical tiers, generalizing platform feeds to serve multi-role candidates (UX, Legal, Accounting, Engineering) through dynamic track title interpolation, and providing comprehensive inbound stream ingestion across LinkedIn Emails, Naukri India Emails, Slack Community channels, and Public Twitter/X accounts.
+- **Backend Implementation:**
+  - Enhance `SourceDefinition` in `src/engine/scraper.ts`:
+    - Add `section: 'ATS' | 'PLATFORM_API' | 'SOCIAL_INBOUND'`.
+    - Add `applicableRoles: ('all' | 'product' | 'engineering' | 'design' | 'legal' | 'finance')[]`.
+  - Extend `SettingsWorkspaceState` in `src/engine/settings.ts`:
+    - Add `monitoredTwitterHandles: string[]` default `['@levelsio', '@sama']`.
+    - Add `inboundEmailAddress: string` (`jobs+<uid>@inbound.backdoor.app`).
+    - Add `slackCommunityChannels: { id: string; name: string; workspace: string; enabled: boolean }[]`.
+  - LinkedIn Email Digest Ingestion Engine:
+    - Multipart email parser isolating individual job recommendation cards.
+    - Strips LinkedIn tracking query parameters (`trk=`, `trkInfo=`) to resolve canonical job URLs (`https://www.linkedin.com/jobs/view/...`).
+  - Naukri India Job Alert Ingestion Engine:
+    - Parses Indian compensation structures: Lacs/LPA (`₹25 - 40 Lacs P.A.`, `30 LPA`).
+    - Normalizes Indian metropolitan tech clusters (Bengaluru, NCR/Gurugram/Noida, Hyderabad, Pune, Mumbai, Chennai).
+    - Unwraps Naukri redirection tracking links, extracts recruiter profile attributes for automated Door 2 Recruiter lead enrichment.
+  - Slack Community Channel Ingestion Engine:
+    - Ingests posts from connected Slack workspace hiring channels (`#jobs`, `#hiring`, `#job-board`).
+    - Connects via Backdoor Slack App bot token (`channels:history`) or channel webhooks.
+    - Extracts unstructured announcements via `extractJobFromRawText()` in `src/engine/safe-fetch.ts`.
+  - Public Twitter Ingest Pipeline:
+    - Ingests public tweets via Apify Twitter Actor (BYOK) or Twitter API v2.
+    - Match hiring triggers (`/(hiring|open role|join our team|we're looking for|apply:)/i`) and routes to `extractJobFromSnippet()`.
+  - Generalize Negative Filtering in `src/engine/scraper.ts`:
+    - Replace static PM exclusion regex with dynamic regex constructed from `state.negativeFilters.excludedTitlePatterns`.
+  - Multi-Role Dynamic Query Interpolation:
+    - Update BYOK aggregators (`rapidapi_jsearch`, `serpapi_jobs`, `apollo_jobs`) to pull search queries dynamically from active `dynamicTracks.targetTitles` rather than hardcoded "Product Manager".
+- **Frontend Implementation (`src/app/settings/page.tsx`):**
+  - Section 1: **Popular ATS Systems** (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, BambooHR, Rippling, Recruitee, Careers JSON-LD) with individual switches and "Enable / Disable All ATS" master switch.
+  - Section 2: **Platform & Role-Specific Feeds**: Category filter chips (`All`, `Product`, `Engineering`, `Design & UX`, `Legal & Compliance`, `Finance & Accounting`) with BYOK badges.
+  - Section 3: **Public Social, Community & Inbound Messaging Streams**:
+    - *LinkedIn Email Digest Card:* Displays candidate's dedicated `jobs+<uid>@inbound.<domain>` with 1-click copy and auto-forwarding rule helper.
+    - *Naukri India Forwarder Card:* Inbound configuration with Indian LPA CTC thresholds and metro location filters.
+    - *Slack Channel Connector:* Management view for connected community Slack channels (`#jobs`, `#hiring`).
+    - *Public Twitter / X Manager:* Interactive `@handle` tag editor with chip add/remove controls.
+- **Verification:**
+  - `npm run test:node tests/source-categorization.test.ts`.
+  - `npm run test:unit tests/frontend/settings-workspace.test.tsx`.
 
 ---
 

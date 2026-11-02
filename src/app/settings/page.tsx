@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Navbar } from '@/components/Navbar';
 import {
   getSettingsWorkspace,
   SettingsWorkspaceState,
@@ -292,8 +291,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#080B11] text-slate-100 flex flex-col font-sans">
-      <Navbar />
-
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
@@ -341,11 +338,10 @@ export default function SettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as SettingsTab)}
-              className={`px-4 py-2.5 rounded-t-lg transition-colors whitespace-nowrap ${
-                activeTab === tab.id
+              className={`px-4 py-2.5 rounded-t-lg transition-colors whitespace-nowrap ${activeTab === tab.id
                   ? 'bg-[#161F33] text-white border-b-2 border-[#2563EB] font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -451,14 +447,12 @@ export default function SettingsPage() {
                     </div>
                     <button
                       onClick={() => handleToggleSource(src.id, src.enabled)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        src.enabled ? 'bg-[#2563EB]' : 'bg-slate-700'
-                      }`}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${src.enabled ? 'bg-[#2563EB]' : 'bg-slate-700'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                          src.enabled ? 'translate-x-4' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${src.enabled ? 'translate-x-4' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                   </div>
@@ -697,11 +691,10 @@ export default function SettingsPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-sm text-white">{key.name}</span>
                             <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                                key.status === 'CONFIGURED' || key.status === 'TEST_PASSED'
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${key.status === 'CONFIGURED' || key.status === 'TEST_PASSED'
                                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                   : 'bg-slate-700/50 text-slate-400 border-slate-600'
-                              }`}
+                                }`}
                             >
                               {key.status}
                             </span>
@@ -754,11 +747,10 @@ export default function SettingsPage() {
 
                       {testRes && (
                         <div
-                          className={`text-xs font-mono p-2 rounded border ${
-                            testRes.success
+                          className={`text-xs font-mono p-2 rounded border ${testRes.success
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          }`}
+                            }`}
                         >
                           {testRes.message}
                         </div>

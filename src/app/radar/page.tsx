@@ -15,6 +15,7 @@ export interface RadarJobItem {
   stage: 'DISCOVERED' | 'CHOSEN' | 'SKIPPED';
   location: string;
   workplace: 'remote' | 'hybrid' | 'onsite';
+  salary?: string;
   source: string;
   postedHoursAgo: number;
   door1?: { name: string; title: string };
@@ -23,6 +24,7 @@ export interface RadarJobItem {
 }
 
 const INITIAL_RADAR_JOBS: RadarJobItem[] = [
+  // --- Past 24 Hours (Daily Crawl Opportunities) ---
   {
     id: 'job-1',
     company: 'Stripe',
@@ -31,11 +33,27 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'Remote (US/EU)',
     workplace: 'remote',
+    salary: '$165,000 - $210,000 + Equity',
     source: 'greenhouse',
     postedHoursAgo: 2,
     door1: { name: 'David S.', title: 'Head of Product' },
     door2: { name: 'Sarah L.', title: 'Lead Recruiter' },
     door3: { name: 'Alex M.', title: 'Staff PM' }
+  },
+  {
+    id: 'job-12',
+    company: 'Anthropic',
+    title: 'Safety & Frontier Model Alignment PM',
+    fitScore: 92,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$205,000 - $285,000 + Top Tier Equity',
+    source: 'lever',
+    postedHoursAgo: 3,
+    door1: { name: 'Daniela A.', title: 'VP Safety' },
+    door2: { name: 'Maya B.', title: 'Talent Lead' },
+    door3: { name: 'Jared K.', title: 'Research PM' }
   },
   {
     id: 'job-2',
@@ -45,10 +63,26 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'Remote (Global)',
     workplace: 'remote',
+    salary: '$150,000 - $195,000 + Equity',
     source: 'ashby',
     postedHoursAgo: 4,
     door1: { name: 'Karri S.', title: 'Co-Founder' },
     door2: { name: 'Elena R.', title: 'Talent Lead' }
+  },
+  {
+    id: 'job-9',
+    company: 'Datadog',
+    title: 'Staff PM, Observability Intelligence',
+    fitScore: 89,
+    stage: 'DISCOVERED',
+    location: 'Remote (US)',
+    workplace: 'remote',
+    salary: '$180,000 - $230,000 + Equity',
+    source: 'greenhouse',
+    postedHoursAgo: 5,
+    door1: { name: 'Olivier P.', title: 'VP Product' },
+    door2: { name: 'Chloe T.', title: 'Lead Recruiter' },
+    door3: { name: 'Sam K.', title: 'Staff PM' }
   },
   {
     id: 'job-3',
@@ -58,11 +92,27 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'San Francisco, CA',
     workplace: 'hybrid',
+    salary: '$200,000 - $275,000 + Equity',
     source: 'greenhouse',
     postedHoursAgo: 6,
     door1: { name: 'Peter W.', title: 'VP Product' },
     door2: { name: 'Marcus K.', title: 'Staff Recruiter' },
     door3: { name: 'Nadia T.', title: 'Senior PM' }
+  },
+  {
+    id: 'job-10',
+    company: 'Snowflake',
+    title: 'Principal PM, Cloud AI Platform',
+    fitScore: 86,
+    stage: 'DISCOVERED',
+    location: 'San Mateo, CA',
+    workplace: 'hybrid',
+    salary: '$210,000 - $280,000 + Top Tier Equity',
+    source: 'workday',
+    postedHoursAgo: 7,
+    door1: { name: 'Benoit D.', title: 'Fellow / Exec' },
+    door2: { name: 'Tara M.', title: 'Director Talent' },
+    door3: { name: 'Ryan L.', title: 'Principal PM' }
   },
   {
     id: 'job-4',
@@ -72,10 +122,25 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'Remote (US)',
     workplace: 'remote',
+    salary: '$170,000 - $220,000 + Equity',
     source: 'lever',
     postedHoursAgo: 8,
     door1: { name: 'Sho K.', title: 'Director of PM' },
     door2: { name: 'Jessica V.', title: 'Talent Partner' }
+  },
+  {
+    id: 'job-11',
+    company: 'Cloudflare',
+    title: 'Senior PM, Developer Workflows',
+    fitScore: 83,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$175,000 - $225,000 + Equity',
+    source: 'lever',
+    postedHoursAgo: 9,
+    door1: { name: 'Matthew P.', title: 'CEO' },
+    door2: { name: 'Jordan B.', title: 'Talent Partner' }
   },
   {
     id: 'job-5',
@@ -85,6 +150,7 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'Remote (Global)',
     workplace: 'remote',
+    salary: '$160,000 - $205,000 + Equity',
     source: 'workable',
     postedHoursAgo: 10,
     door1: { name: 'Guillermo R.', title: 'CEO' },
@@ -98,6 +164,7 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'San Francisco, CA',
     workplace: 'hybrid',
+    salary: '$155,000 - $200,000 + Equity',
     source: 'greenhouse',
     postedHoursAgo: 12,
     door2: { name: 'Rachel C.', title: 'Senior Recruiter' },
@@ -111,6 +178,7 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'Remote (Global)',
     workplace: 'remote',
+    salary: '$145,000 - $185,000 + Equity',
     source: 'yc_startup',
     postedHoursAgo: 14,
     door1: { name: 'Paul C.', title: 'CEO' },
@@ -124,20 +192,145 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     stage: 'DISCOVERED',
     location: 'San Francisco, CA',
     workplace: 'onsite',
+    salary: '$190,000 - $260,000 + Equity',
     source: 'lever',
     postedHoursAgo: 18,
     door1: { name: 'Dario A.', title: 'CEO' },
     door2: { name: 'Maya B.', title: 'Talent Lead' },
     door3: { name: 'Chris O.', title: 'Research Lead' }
+  },
+
+  // --- Past 15 Days Backfill (Initial Onboarding Crawl) ---
+  {
+    id: 'job-13',
+    company: 'Cursor / Anysphere',
+    title: 'Founding AI Product Lead',
+    fitScore: 95,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'onsite',
+    salary: '$220,000 - $300,000 + High Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 36, // 1.5 days ago
+    door1: { name: 'Michael T.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Aman S.', title: 'Co-Founder' }
+  },
+  {
+    id: 'job-14',
+    company: 'GitHub',
+    title: 'Principal PM, Copilot Core Platform',
+    fitScore: 91,
+    stage: 'DISCOVERED',
+    location: 'Remote (US)',
+    workplace: 'remote',
+    salary: '$195,000 - $250,000 + Bonus',
+    source: 'greenhouse',
+    postedHoursAgo: 48, // 2 days ago
+    door1: { name: 'Thomas D.', title: 'CEO' },
+    door2: { name: 'Erika V.', title: 'Director Talent' },
+    door3: { name: 'Kyle N.', title: 'Staff PM' }
+  },
+  {
+    id: 'job-15',
+    company: 'Figma',
+    title: 'Group Product Manager, Developer Ecosystem',
+    fitScore: 87,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$210,000 - $270,000 + Equity',
+    source: 'lever',
+    postedHoursAgo: 72, // 3 days ago
+    door1: { name: 'Dylan F.', title: 'CEO' },
+    door2: { name: 'Jessica V.', title: 'Talent Partner' }
+  },
+  {
+    id: 'job-16',
+    company: 'Vercel',
+    title: 'Staff PM, AI Gateway & v0 Edge',
+    fitScore: 85,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$180,000 - $240,000 + Equity',
+    source: 'workable',
+    postedHoursAgo: 120, // 5 days ago
+    door1: { name: 'Guillermo R.', title: 'CEO' },
+    door2: { name: 'Malte U.', title: 'VP Engineering' }
+  },
+  {
+    id: 'job-17',
+    company: 'Warp',
+    title: 'Lead Product Manager, Developer Terminal',
+    fitScore: 81,
+    stage: 'DISCOVERED',
+    location: 'New York, NY',
+    workplace: 'hybrid',
+    salary: '$170,000 - $215,000 + Equity',
+    source: 'ashby',
+    postedHoursAgo: 168, // 7 days ago
+    door1: { name: 'Zach L.', title: 'Founder & CEO' },
+    door2: { name: 'Claire H.', title: 'Head of People' }
+  },
+  {
+    id: 'job-18',
+    company: 'Retool',
+    title: 'Senior PM, AI Workflows & Agents',
+    fitScore: 78,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$165,000 - $210,000 + Equity',
+    source: 'remotive',
+    postedHoursAgo: 240, // 10 days ago
+    door1: { name: 'David H.', title: 'CEO' },
+    door2: { name: 'Pooja S.', title: 'Lead Recruiter' }
+  },
+  {
+    id: 'job-19',
+    company: 'Canva',
+    title: 'Lead AI Platform PM',
+    fitScore: 75,
+    stage: 'DISCOVERED',
+    location: 'Remote (US/Australia)',
+    workplace: 'remote',
+    salary: '$160,000 - $200,000 + Equity',
+    source: 'remoteok',
+    postedHoursAgo: 312, // 13 days ago
+    door1: { name: 'Cameron A.', title: 'Co-Founder' },
+    door2: { name: 'Mia R.', title: 'Talent Director' }
+  },
+  {
+    id: 'job-20',
+    company: 'Postman',
+    title: 'Principal PM, Public API Network',
+    fitScore: 77,
+    stage: 'DISCOVERED',
+    location: 'Remote (India/US)',
+    workplace: 'remote',
+    salary: '$150,000 - $190,000 + Stock',
+    source: 'greenhouse',
+    postedHoursAgo: 348, // 14.5 days ago
+    door1: { name: 'Abhinav A.', title: 'CEO' },
+    door2: { name: 'Siddhartha B.', title: 'VP Product' }
   }
 ];
 
 export default function MorningRadarPage() {
   const [jobs, setJobs] = useState<RadarJobItem[]>(INITIAL_RADAR_JOBS);
   const [viewMode, setViewMode] = useState<'bento' | 'table'>('bento');
+  
+  // Status View Tabs: Active (Default) | Skipped (Review/Restore) | All (Complete Pool)
+  const [statusTab, setStatusTab] = useState<'active' | 'skipped' | 'all'>('active');
+  
+  // Time Crawl Scope: 15-Day Backfill (First-Time User) vs 24-Hour Daily Incremental Crawl
+  const [timeWindow, setTimeWindow] = useState<'15_days' | '24_hours'>('15_days');
+  
+  // Quick Filters
+  const [filterCategory, setFilterCategory] = useState<'all' | 'high_fit' | 'remote' | 'chosen'>('all');
+  const [batchLimit, setBatchLimit] = useState<'12' | 'all'>('all');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [selectedDrawerId, setSelectedDrawerId] = useState<string | null>(null);
   const [isIngestModalOpen, setIsIngestModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
@@ -165,10 +358,45 @@ export default function MorningRadarPage() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
-  // Filter out SKIPPED roles for active radar display, and match search query
-  const visibleJobs = useMemo(() => {
-    let list = jobs.filter((j) => j.stage !== 'SKIPPED');
+  // Compute live counts across status tabs and crawl windows
+  const counts = useMemo(() => {
+    // Current time window pool
+    const inWindow = jobs.filter((j) => {
+      if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
+      return j.postedHoursAgo <= 360; // 15 days = 360 hours
+    });
 
+    return {
+      active: inWindow.filter((j) => j.stage !== 'SKIPPED').length,
+      skipped: inWindow.filter((j) => j.stage === 'SKIPPED').length,
+      allTotal: inWindow.length,
+      highFit: inWindow.filter((j) => j.fitScore >= 80 && (statusTab === 'skipped' ? j.stage === 'SKIPPED' : statusTab === 'active' ? j.stage !== 'SKIPPED' : true)).length,
+      remote: inWindow.filter((j) => j.workplace === 'remote' && (statusTab === 'skipped' ? j.stage === 'SKIPPED' : statusTab === 'active' ? j.stage !== 'SKIPPED' : true)).length,
+      chosen: inWindow.filter((j) => j.stage === 'CHOSEN').length,
+      within24h: jobs.filter((j) => j.postedHoursAgo <= 24 || j.id.startsWith('ingest-') || j.id.startsWith('bulk-')).length,
+      within15d: jobs.length,
+    };
+  }, [jobs, timeWindow, statusTab]);
+
+  // Master Visible Roles Filter: time window -> status tab -> search -> category -> sorted descending by score
+  const visibleJobs = useMemo(() => {
+    // 1. Time Window Filter (15-Day Backfill vs 24h Daily Crawl)
+    let list = jobs.filter((j) => {
+      if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
+      return j.postedHoursAgo <= 360; // 15 days
+    });
+
+    // 2. Status Tab Filter (Active vs Skipped vs All)
+    if (statusTab === 'active') {
+      list = list.filter((j) => j.stage !== 'SKIPPED');
+    } else if (statusTab === 'skipped') {
+      list = list.filter((j) => j.stage === 'SKIPPED');
+    }
+    // 'all' keeps both active, chosen, and skipped roles
+
+    // 3. Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -176,13 +404,17 @@ export default function MorningRadarPage() {
       );
     }
 
-    // Morning Radar filter: keep user-ingested jobs, plus high-signal roles (fit >= 70 & within 24h)
-    const radarHighSignal = list.filter(
-      (j) => j.id.startsWith('ingest-') || j.id.startsWith('bulk-') || (j.fitScore >= 70 && j.postedHoursAgo <= 24)
-    );
+    // 4. Quick Category Filter Chips
+    if (filterCategory === 'high_fit') {
+      list = list.filter((j) => j.fitScore >= 80);
+    } else if (filterCategory === 'remote') {
+      list = list.filter((j) => j.workplace === 'remote');
+    } else if (filterCategory === 'chosen') {
+      list = list.filter((j) => j.stage === 'CHOSEN');
+    }
 
-    // Keep newly ingested roles pinned at the top, then sort remainder descending by fit score
-    radarHighSignal.sort((a, b) => {
+    // 5. Continuous Score Ranking (Highest Match First; Pinned Ingests at top)
+    list.sort((a, b) => {
       const aIngested = a.id.startsWith('ingest-') || a.id.startsWith('bulk-');
       const bIngested = b.id.startsWith('ingest-') || b.id.startsWith('bulk-');
       if (aIngested && !bIngested) return -1;
@@ -190,15 +422,15 @@ export default function MorningRadarPage() {
       return b.fitScore - a.fitScore;
     });
 
-    if (!isExpanded) {
-      // Top 20 Capped
-      return radarHighSignal.slice(0, 20);
+    // 6. Batch Focus Slice (Top 12 Focus vs All available)
+    if (batchLimit === '12') {
+      return list.slice(0, 12);
     }
 
-    return radarHighSignal;
-  }, [jobs, searchQuery, isExpanded]);
+    return list;
+  }, [jobs, timeWindow, statusTab, searchQuery, filterCategory, batchLimit]);
 
-  // Hook for single-key keyboard engine
+  // Hook for single-key keyboard navigation engine
   useTableKeyboardNav({
     rows: visibleJobs,
     selectedIndex,
@@ -257,6 +489,7 @@ export default function MorningRadarPage() {
       stage: 'DISCOVERED',
       location: newJob.location,
       workplace: newJob.workplace,
+      salary: newJob.salary,
       source: newJob.source,
       postedHoursAgo: 0,
       door1: newJob.door1,
@@ -279,6 +512,7 @@ export default function MorningRadarPage() {
         stage: 'DISCOVERED',
         location: j.location,
         workplace: j.workplace,
+        salary: j.salary,
         source: j.source,
         postedHoursAgo: 0,
         door1: j.door1,
@@ -294,21 +528,33 @@ export default function MorningRadarPage() {
     setTimeout(() => setBulkToast(null), 5000);
   };
 
+  const handleRestoreRole = (jobId: string) => {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, stage: 'DISCOVERED' } : j))
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC] p-6 lg:p-8 font-sans">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
-            Morning Radar
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
+              Morning Radar
+            </h1>
+            <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live Feed Ranked by Match Score
+            </span>
+          </div>
           <p className="text-sm text-[#94A3B8] mt-1">
-            Autonomous market surveillance across 35 sources (Top 20 roles, 24h window, Fit &ge; 70%).
+            Autonomous market surveillance across 35 sources (Free ATS, direct crawler, and curated boards).
           </p>
         </div>
 
-        {/* View Switcher & Search Bar */}
-        <div className="flex items-center gap-3">
+        {/* View Switcher, Ingest & Search */}
+        <div className="flex items-center gap-3 flex-wrap">
           {/* Quick Search */}
           <div className="relative">
             <input
@@ -317,7 +563,7 @@ export default function MorningRadarPage() {
               placeholder="Search roles (/)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-[#0F1523] border border-white/10 rounded-md px-3 py-1.5 text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 md:w-64"
+              className="bg-[#0F1523] border border-white/10 rounded-md px-3 py-1.5 text-sm text-[#F8FAFC] placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-48 md:w-60"
             />
           </div>
 
@@ -365,36 +611,177 @@ export default function MorningRadarPage() {
         </div>
       </div>
 
-      {/* Morning Radar Banner */}
-      <div className="bg-[#0F1523] border border-white/10 rounded-lg p-4 mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-blue-500 text-lg">⚡</span>
-          <span className="text-sm font-semibold tracking-wide text-[#F8FAFC]">
-            MORNING RADAR: {visibleJobs.length} High-Signal Opportunities Discovered Today{' '}
-            {!isExpanded && '(Top 20 Capped)'}
-          </span>
+      {/* Crawl Scope & First-Time User Ingestion Banner */}
+      <div className="bg-[#0F1523] border border-white/10 rounded-xl p-4 mb-5 space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Crawl Scope Toggle (15-Day Backfill vs 24h Daily Crawl) */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-xs font-mono text-slate-400">Crawl Scope:</span>
+            <div className="inline-flex bg-[#161F33] border border-white/10 rounded-lg p-0.5 text-xs">
+              <button
+                onClick={() => setTimeWindow('15_days')}
+                className={`px-3 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                  timeWindow === '15_days'
+                    ? 'bg-[#2563EB] text-white shadow-sm font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="First-time user onboarding crawl fetches past 15 days of opportunities"
+              >
+                <span>⚡ 15-Day Discovery (First Login)</span>
+                <span className="text-[10px] font-mono bg-white/20 px-1.5 py-0.2 rounded">{counts.within15d}</span>
+              </button>
+              <button
+                onClick={() => setTimeWindow('24_hours')}
+                className={`px-3 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                  timeWindow === '24_hours'
+                    ? 'bg-[#2563EB] text-white shadow-sm font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Daily 04:00 AM crawler adding new 24h opportunities"
+              >
+                <span>Past 24 Hours (Daily Crawl)</span>
+                <span className="text-[10px] font-mono bg-white/20 px-1.5 py-0.2 rounded">{counts.within24h}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Density Batch Slicing & Traversal Keys */}
+          <div className="flex items-center gap-3 self-end lg:self-auto">
+            <div className="inline-flex bg-[#161F33] border border-white/10 rounded-lg p-0.5 text-xs">
+              <button
+                onClick={() => setBatchLimit('12')}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  batchLimit === '12'
+                    ? 'bg-[#2563EB] text-white shadow-sm font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="View top 12 focused opportunities upfront"
+              >
+                Top 12 Focus
+              </button>
+              <button
+                onClick={() => setBatchLimit('all')}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  batchLimit === 'all'
+                    ? 'bg-[#2563EB] text-white shadow-sm font-semibold'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title={`View all ${counts.allTotal} opportunities`}
+              >
+                All Opportunities ({counts.allTotal})
+              </button>
+            </div>
+
+            <div className="hidden lg:flex text-xs text-[#94A3B8] items-center gap-1.5">
+              <span>Keys:</span>
+              <kbd className="bg-[#161F33] border border-white/10 px-1 py-0.5 rounded text-[10px] font-mono">j</kbd>
+              <kbd className="bg-[#161F33] border border-white/10 px-1 py-0.5 rounded text-[10px] font-mono">k</kbd> navigate
+              <kbd className="bg-[#161F33] border border-white/10 px-1 py-0.5 rounded text-[10px] font-mono">s</kbd> skip
+              <kbd className="bg-[#161F33] border border-white/10 px-1 py-0.5 rounded text-[10px] font-mono">c</kbd> choose
+            </div>
+          </div>
         </div>
-        <div className="text-xs text-[#94A3B8] flex items-center gap-2">
-          <span>Shortcuts:</span>
-          <kbd className="bg-[#161F33] border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">j</kbd> down
-          <kbd className="bg-[#161F33] border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">k</kbd> up
-          <kbd className="bg-[#161F33] border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">Enter</kbd> dossier
-          <kbd className="bg-[#161F33] border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">s</kbd> skip
-          <kbd className="bg-[#161F33] border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">c</kbd> choose
+
+        {/* View Status Tabs (Active | Skipped | All Opportunities) */}
+        <div className="flex items-center justify-between border-t border-white/8 pt-3 flex-wrap gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setStatusTab('active')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                statusTab === 'active'
+                  ? 'bg-[#2563EB] text-white font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span>Active Roles</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-white/20">{counts.active}</span>
+            </button>
+            <button
+              onClick={() => setStatusTab('skipped')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                statusTab === 'skipped'
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span>Skipped Roles</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-500/20 text-rose-300">{counts.skipped}</span>
+            </button>
+            <button
+              onClick={() => setStatusTab('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                statusTab === 'all'
+                  ? 'bg-slate-700 text-white font-semibold'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <span>All Scored Pool</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-white/10">{counts.allTotal}</span>
+            </button>
+          </div>
+
+          {/* Quick Signal Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+            <button
+              onClick={() => setFilterCategory('all')}
+              className={`px-2.5 py-1 rounded-md transition-colors font-medium whitespace-nowrap ${
+                filterCategory === 'all'
+                  ? 'bg-white/15 text-white font-semibold'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-400'
+              }`}
+            >
+              All Signals
+            </button>
+            <button
+              onClick={() => setFilterCategory('high_fit')}
+              className={`px-2.5 py-1 rounded-md transition-colors font-medium whitespace-nowrap flex items-center gap-1.5 ${
+                filterCategory === 'high_fit'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-semibold'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-400'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              High Fit &ge;80% ({counts.highFit})
+            </button>
+            <button
+              onClick={() => setFilterCategory('remote')}
+              className={`px-2.5 py-1 rounded-md transition-colors font-medium whitespace-nowrap ${
+                filterCategory === 'remote'
+                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40 font-semibold'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-400'
+              }`}
+            >
+              Remote ({counts.remote})
+            </button>
+            <button
+              onClick={() => setFilterCategory('chosen')}
+              className={`px-2.5 py-1 rounded-md transition-colors font-medium whitespace-nowrap ${
+                filterCategory === 'chosen'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-semibold'
+                  : 'bg-white/5 hover:bg-white/10 text-slate-400'
+              }`}
+            >
+              Chosen ({counts.chosen})
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Content Rendering */}
       {visibleJobs.length === 0 ? (
         <div className="bg-[#0F1523] border border-white/10 rounded-lg p-12 text-center text-[#94A3B8]">
-          <p className="text-base font-medium text-white">All Caught Up</p>
+          <p className="text-base font-medium text-white">
+            {statusTab === 'skipped' ? 'No Skipped Roles' : 'All Caught Up'}
+          </p>
           <p className="text-sm mt-1">
-            No new postings &ge; 70% in the last 24 hours. Your pipeline is up to date.
+            {statusTab === 'skipped'
+              ? 'You have not skipped any roles yet. Roles skipped in Active tab will appear here.'
+              : 'No opportunities match your current filters. Try switching the crawl scope or expanding filters.'}
           </p>
         </div>
       ) : viewMode === 'bento' ? (
-        /* 1:1 Bento Cards Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
+        /* Responsive Bento Cards Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
           {visibleJobs.map((job, idx) => {
             const isSelected = idx === selectedIndex;
             return (
@@ -404,26 +791,31 @@ export default function MorningRadarPage() {
                   setSelectedIndex(idx);
                   setSelectedDrawerId(job.id);
                 }}
-                className={`bg-[#0F1523] border rounded-lg p-5 flex flex-col justify-between aspect-square transition-all duration-150 cursor-pointer ${
+                className={`bg-[#0F1523] border rounded-xl p-3.5 flex flex-col justify-between transition-all duration-150 cursor-pointer shadow-sm hover:shadow-md ${
                   isSelected
-                    ? 'ring-2 ring-blue-500 border-transparent shadow-lg shadow-blue-500/10'
+                    ? 'ring-2 ring-[#2563EB] border-transparent shadow-lg shadow-blue-500/10'
                     : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                {/* Top Section: Company & Score Badge */}
+                {/* Top Section: Company, Stage & Score Badge */}
                 <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-mono font-medium text-[#94A3B8] uppercase tracking-wider">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-mono font-medium text-[#94A3B8] uppercase tracking-wider truncate">
                       {job.company}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       {job.stage === 'CHOSEN' && (
                         <span className="text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                           ✓ CHOSEN
                         </span>
                       )}
+                      {job.stage === 'SKIPPED' && (
+                        <span className="text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          SKIPPED
+                        </span>
+                      )}
                       <span
-                        className={`text-xs font-mono font-semibold px-2 py-0.5 rounded ${
+                        className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded ${
                           job.fitScore >= 70
                             ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                             : 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
@@ -433,61 +825,115 @@ export default function MorningRadarPage() {
                       </span>
                     </div>
                   </div>
-                  <h3 className="text-base font-semibold text-[#F8FAFC] mt-2 line-clamp-2">
+                  <h3 className="text-sm font-semibold text-[#F8FAFC] mt-1.5 line-clamp-1" title={job.title}>
                     {job.title}
                   </h3>
-                  <p className="text-xs text-[#94A3B8] mt-1">
-                    {job.location} &bull; <span className="capitalize">{job.workplace}</span>
-                  </p>
                 </div>
 
-                {/* Bottom Section: Three Doors & Actions */}
-                <div className="pt-3 border-t border-white/5 space-y-3">
+                {/* Middle Section: Compact Structured Telemetry Box */}
+                <div className="grid grid-cols-2 gap-x-2.5 gap-y-1.5 p-2.5 rounded-lg bg-[#161F33]/50 border border-white/8 my-2 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
+                      Location
+                    </span>
+                    <span className="font-medium text-white block truncate text-xs" title={job.location}>
+                      {job.location}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
+                      Workplace Policy
+                    </span>
+                    <span className="font-medium text-white block uppercase tracking-wider text-xs">
+                      {job.workplace}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
+                      Salary Telemetry
+                    </span>
+                    <span
+                      className="font-medium text-emerald-400 block truncate text-xs"
+                      title={job.salary || '$165,000 - $210,000 + Equity'}
+                    >
+                      {job.salary || '$165,000 - $210,000 + Equity'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
+                      Source & Age
+                    </span>
+                    <span className="font-medium text-white block capitalize text-xs">
+                      {job.source} &bull; {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h` : `${Math.round(job.postedHoursAgo / 24)}d`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom Section: Three Doors & Dynamic Actions */}
+                <div className="pt-2 border-t border-white/5 space-y-2">
                   <ThreeDoorsChips door1={job.door1} door2={job.door2} door3={job.door3} />
 
-                  <div className="flex items-center justify-between text-xs text-[#94A3B8] pt-1">
-                    <span className="font-mono text-[11px]">{job.postedHoursAgo}h ago</span>
-                    <div className="flex gap-2">
+                  <div className="flex items-center justify-between text-xs text-[#94A3B8] pt-0.5">
+                    <span className="font-mono text-[10px]">
+                      {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h ago` : `${Math.round(job.postedHoursAgo / 24)}d ago`}
+                    </span>
+                    <div className="flex gap-1.5">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedIndex(idx);
                           setSelectedDrawerId(job.id);
                         }}
-                        className="px-2 py-0.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded font-medium border border-white/10 transition-colors"
+                        className="px-2 py-0.5 text-xs bg-[#161F33] hover:bg-[#2563EB] hover:text-white text-slate-200 rounded font-medium border border-white/10 transition-colors"
                       >
                         Dossier &rarr;
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setJobs((prev) =>
-                            prev.map((j) => (j.id === job.id ? { ...j, stage: 'SKIPPED' } : j))
-                          );
-                        }}
-                        className="px-2 py-0.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded"
-                      >
-                        Skip
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setJobs((prev) =>
-                            prev.map((j) =>
-                              j.id === job.id
-                                ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
-                                : j
-                            )
-                          );
-                        }}
-                        className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
-                          job.stage === 'CHOSEN'
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                            : 'bg-blue-600 hover:bg-blue-500 text-white'
-                        }`}
-                      >
-                        {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
-                      </button>
+
+                      {job.stage === 'SKIPPED' ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRestoreRole(job.id);
+                          }}
+                          className="px-2 py-0.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded font-medium transition-colors"
+                          title="Restore role back to active radar"
+                        >
+                          Restore ↺
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setJobs((prev) =>
+                                prev.map((j) => (j.id === job.id ? { ...j, stage: 'SKIPPED' } : j))
+                              );
+                            }}
+                            className="px-1.5 py-0.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                          >
+                            Skip
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setJobs((prev) =>
+                                prev.map((j) =>
+                                  j.id === job.id
+                                    ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
+                                    : j
+                                )
+                              );
+                            }}
+                            className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
+                              job.stage === 'CHOSEN'
+                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                : 'bg-[#2563EB] hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -543,7 +989,19 @@ export default function MorningRadarPage() {
                       </span>
                     </td>
                     <td className="py-2 px-3 font-semibold text-[#F8FAFC]">
-                      {job.company}
+                      <div className="flex items-center gap-1.5">
+                        <span>{job.company}</span>
+                        {job.stage === 'SKIPPED' && (
+                          <span className="text-[9px] font-mono px-1 rounded bg-rose-500/20 text-rose-300">
+                            SKIPPED
+                          </span>
+                        )}
+                        {job.stage === 'CHOSEN' && (
+                          <span className="text-[9px] font-mono px-1 rounded bg-emerald-500/20 text-emerald-400">
+                            CHOSEN
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2 px-3 text-[#F8FAFC]">
                       {job.title}
@@ -558,7 +1016,7 @@ export default function MorningRadarPage() {
                       {job.source}
                     </td>
                     <td className="py-2 px-3 text-xs font-mono text-right text-slate-400">
-                      {job.postedHoursAgo}h
+                      {job.postedHoursAgo < 24 ? `${job.postedHoursAgo}h` : `${Math.round(job.postedHoursAgo / 24)}d`}
                     </td>
                     <td className="py-2 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -572,36 +1030,52 @@ export default function MorningRadarPage() {
                         >
                           Dossier &rarr;
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setJobs((prev) =>
-                              prev.map((j) =>
-                                j.id === job.id
-                                  ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
-                                  : j
-                              )
-                            );
-                          }}
-                          className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
-                            job.stage === 'CHOSEN'
-                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                              : 'bg-blue-600/80 hover:bg-blue-600 text-white'
-                          }`}
-                        >
-                          {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setJobs((prev) =>
-                              prev.map((j) => (j.id === job.id ? { ...j, stage: 'SKIPPED' } : j))
-                            );
-                          }}
-                          className="px-1.5 py-0.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
-                        >
-                          Skip
-                        </button>
+
+                        {job.stage === 'SKIPPED' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestoreRole(job.id);
+                            }}
+                            className="px-2 py-0.5 text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded font-medium transition-colors"
+                            title="Restore role back to active radar"
+                          >
+                            Restore ↺
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setJobs((prev) =>
+                                  prev.map((j) =>
+                                    j.id === job.id
+                                      ? { ...j, stage: j.stage === 'CHOSEN' ? 'DISCOVERED' : 'CHOSEN' }
+                                      : j
+                                  )
+                                );
+                              }}
+                              className={`px-2 py-0.5 text-xs rounded font-medium transition-colors ${
+                                job.stage === 'CHOSEN'
+                                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                  : 'bg-blue-600/80 hover:bg-blue-600 text-white'
+                              }`}
+                            >
+                              {job.stage === 'CHOSEN' ? 'Chosen ✓' : 'Choose'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setJobs((prev) =>
+                                  prev.map((j) => (j.id === job.id ? { ...j, stage: 'SKIPPED' } : j))
+                                );
+                              }}
+                              className="px-1.5 py-0.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
+                            >
+                              Skip
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -609,18 +1083,6 @@ export default function MorningRadarPage() {
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Expand Toggle */}
-      {visibleJobs.length >= 20 && !isExpanded && (
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => setIsExpanded(true)}
-            className="bg-[#0F1523] border border-white/10 hover:border-white/20 text-[#F8FAFC] text-sm px-4 py-2 rounded-md font-medium transition-colors"
-          >
-            See all roles &ge; 70%
-          </button>
         </div>
       )}
 
