@@ -7,6 +7,7 @@ import {
   getInterviewsWorkspaceState,
   generateGoogleCalendarUrl,
 } from '@/engine/interviews-workspace';
+import { useDataMode } from '@/components/DataModeToggle';
 
 function formatInterviewTiming(isoString: string, durationMinutes: number): string {
   try {
@@ -32,6 +33,7 @@ function formatInterviewTiming(isoString: string, durationMinutes: number): stri
 }
 
 export default function InterviewsPage() {
+  const { mode, isLive, toggleMode, mounted } = useDataMode();
   const [workspace, setWorkspace] = useState<InterviewsWorkspaceState>(getInterviewsWorkspaceState);
   const [selectedInterviewId, setSelectedInterviewId] = useState<string>('int-anthropic-hm-01');
   const [transcriptFilter, setTranscriptFilter] = useState('');
@@ -54,21 +56,24 @@ export default function InterviewsPage() {
   });
 
   useEffect(() => {
-    fetch('/api/interviews')
+    if (!mounted) return;
+    fetch(`/api/interviews?mode=${mode}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && Array.isArray(data.interviews)) {
           setWorkspace(data);
           if (data.interviews.length > 0) {
             setSelectedInterviewId(data.interviews[0].id);
+          } else {
+            setSelectedInterviewId('');
           }
         }
       })
       .catch(() => {
-        const local = getInterviewsWorkspaceState();
+        const local = getInterviewsWorkspaceState(mode);
         setWorkspace(local);
       });
-  }, []);
+  }, [mode, mounted]);
 
   const activeInterview: InterviewRoundRecord | undefined =
     workspace?.interviews.find((i) => i.id === selectedInterviewId) || workspace?.interviews[0];
@@ -262,9 +267,16 @@ export default function InterviewsPage() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
               <span>Interview Notes &amp; Debrief Workspace</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#2563EB]/20 text-[#38BDF8] border border-[#2563EB]/40">
-                Audio Intelligence Active
-              </span>
+              {isLive ? (
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Live Testing ({workspace?.totalInterviews || 0} Recorded)
+                </span>
+              ) : (
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#2563EB]/20 text-[#38BDF8] border border-[#2563EB]/40">
+                  Demo Showcase (Sample Transcripts)
+                </span>
+              )}
             </h1>
             <p className="text-xs text-[#94A3B8] mt-1">
               Google Meet audio transcription, 1-click Google Calendar scheduling, and synchronized action items.
@@ -318,8 +330,35 @@ export default function InterviewsPage() {
           </div>
         </div>
 
-        {/* Main Workspace 2-Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {isLive && filteredInterviews.length === 0 ? (
+          <div className="bg-[#0F1523] border border-white/10 rounded-xl p-10 text-center max-w-xl mx-auto my-8 shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xl flex items-center justify-center mx-auto mb-3">
+              🎙️
+            </div>
+            <h3 className="text-lg font-bold text-white">No Live Interviews Recorded Yet</h3>
+            <p className="text-sm text-[#94A3B8] mt-2 max-w-md mx-auto leading-relaxed">
+              You are in <span className="text-emerald-400 font-mono font-medium">Live Testing Mode</span>. When you join a Google Meet call with the Chrome Extension or schedule an interview round, debrief notes, extracted Q&amp;As, and action items will populate here.
+            </p>
+            <div className="flex justify-center gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => setIsScheduleModalOpen(true)}
+                className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>➕ Schedule Interview Round</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-medium transition-colors"
+              >
+                Switch to Demo Showcase
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Main Workspace 2-Column Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Interview Timeline List (4 cols) */}
           <div className="lg:col-span-4 space-y-3">
             <div className="flex items-center justify-between px-1">
@@ -567,6 +606,7 @@ export default function InterviewsPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* MODAL: SCHEDULE INTERVIEW ROUND */}
         {isScheduleModalOpen && (

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { DataModeToggle } from '@/components/DataModeToggle';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -25,7 +27,7 @@ export function Navbar() {
         <div className="flex items-center gap-6">
           <Link href="/radar" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-md bg-[#2563EB] flex items-center justify-center font-bold text-white text-sm shadow-sm">
-              B
+              🚪
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="font-bold text-white tracking-tight text-base">Backdoor</span>
@@ -63,13 +65,19 @@ export function Navbar() {
 
         {/* Right Status Indicator & Mobile Hamburger */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400 bg-[#0F1523] px-2.5 py-1 rounded-md border border-white/8">
+          {/* Data Mode Switch (Live vs Demo Showcase) */}
+          <DataModeToggle />
+
+          <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-slate-400 bg-[#0F1523] px-2.5 py-1 rounded-md border border-white/8">
             <span className="w-2 h-2 rounded-full bg-teal-400"></span>
             <span>35 Sources Scanned</span>
           </div>
           <div className="hidden sm:block text-[11px] font-mono text-slate-400 bg-[#161F33] px-2 py-1 rounded border border-white/10">
             Track: Staff PM
           </div>
+
+          {/* Dual Visual Theme Toggle (Obsidian Cobalt <-> Executive Sage) */}
+          <ThemeToggle />
 
           {/* Mobile Hamburger Button (44px min touch target per WCAG) */}
           <button
@@ -132,7 +140,11 @@ export function Navbar() {
               </nav>
             </div>
 
-            <div className="pt-6 border-t border-white/10 space-y-2 text-xs font-mono text-slate-400">
+            <div className="pt-6 border-t border-white/10 space-y-3 text-xs font-mono text-slate-400">
+              <div className="flex items-center justify-between">
+                <span>Data Mode</span>
+                <DataModeToggle compact />
+              </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-teal-400"></span>
                 <span>35 Sources Scanned</span>

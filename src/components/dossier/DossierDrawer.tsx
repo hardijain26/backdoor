@@ -409,7 +409,7 @@ export function DossierDrawer({
               { key: 'spec', label: '1. Spec' },
               { key: 'match', label: '2. Match' },
               { key: 'intel', label: '3. Intel' },
-              { key: 'doors', label: '4. 🛤️ Pathways' },
+              { key: 'doors', label: '4. Backdoor' },
               { key: 'draft', label: '5. Outreach & CV' }
             ] as { key: DossierTab; label: string }[]
           ).map((tab) => (
@@ -714,19 +714,19 @@ export function DossierDrawer({
             </div>
           )}
 
-          {/* TAB 4: BACKDOOR CONTACTS / PATHWAYS */}
+          {/* TAB 4: BACKDOOR CONTACTS */}
           {activeTab === 'doors' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-xs text-slate-400">
-                  Strategic outreach targets across three organizational entry pathways. Zero personal phone numbers or addresses stored.
+                  Strategic outreach targets across three organizational entry doors. Zero personal phone numbers or addresses stored.
                 </p>
                 <span className="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
                   Enrichment: {enrichedContacts?.provider === 'apollo' ? 'Apollo API' : 'Verified Public Directory'}
                 </span>
               </div>
 
-              {/* Pathway 1: Hiring Manager */}
+              {/* Door 1: Hiring Manager */}
               <div
                 onClick={() => setSelectedDoor('door1')}
                 className={`p-4 rounded-lg border transition-all cursor-pointer ${
@@ -738,7 +738,7 @@ export function DossierDrawer({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#10B981] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
-                    🛤️ Pathway 1: Hiring Manager / Executive
+                    🚪 Door 1: Hiring Manager / Executive
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
                     Confidence: {enrichedContacts?.door1.confidenceScore || job.door1?.confidence || 94}%
@@ -790,7 +790,7 @@ export function DossierDrawer({
                 </div>
               </div>
 
-              {/* Pathway 2: Recruiter */}
+              {/* Door 2: Recruiter */}
               <div
                 onClick={() => setSelectedDoor('door2')}
                 className={`p-4 rounded-lg border transition-all cursor-pointer ${
@@ -802,7 +802,7 @@ export function DossierDrawer({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-[#0284C7] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7]"></span>
-                    🛤️ Pathway 2: Recruiter / Talent Lead
+                    🚪 Door 2: Recruiter / Talent Lead
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
                     Confidence: {enrichedContacts?.door2.confidenceScore || job.door2?.confidence || 88}%
@@ -854,7 +854,7 @@ export function DossierDrawer({
                 </div>
               </div>
 
-              {/* Pathway 3: Peer PM */}
+              {/* Door 3: Peer PM */}
               <div
                 onClick={() => setSelectedDoor('door3')}
                 className={`p-4 rounded-lg border transition-all cursor-pointer ${
@@ -866,7 +866,7 @@ export function DossierDrawer({
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                    🛤️ Pathway 3: Peer / Staff PM
+                    🚪 Door 3: Peer / Staff PM
                   </span>
                   <span className="text-[11px] font-mono text-slate-400">
                     Confidence: {enrichedContacts?.door3.confidenceScore || job.door3?.confidence || 82}%

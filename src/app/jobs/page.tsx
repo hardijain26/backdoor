@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ThreeDoorsChips } from '@/components/ThreeDoorsChips';
 import { DossierDrawer, DossierJobData } from '@/components/dossier/DossierDrawer';
+import { useDataMode, DataModeToggle } from '@/components/DataModeToggle';
+import { getLivePipelineJobs, getLiveJobs } from '@/engine/data-mode';
 
 interface PipelineJob extends DossierJobData {
   stage: 'DISCOVERED' | 'CHOSEN' | 'OUTREACH_STAGED' | 'APPLIED';
@@ -71,8 +73,29 @@ const SAMPLE_PIPELINE: PipelineJob[] = [
 ];
 
 export default function JobsPage() {
+  const { isLive, toggleMode, mounted } = useDataMode();
   const [pipelineJobs, setPipelineJobs] = useState<PipelineJob[]>(SAMPLE_PIPELINE);
   const [selectedDrawerId, setSelectedDrawerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isLive) {
+      const livePipeline = getLivePipelineJobs<PipelineJob>();
+      if (livePipeline.length > 0) {
+        setPipelineJobs(livePipeline);
+      } else {
+        // Fallback: check if any live jobs were chosen from Radar
+        const liveJobs = getLiveJobs();
+        const fromRadar: PipelineJob[] = liveJobs.map((j) => ({
+          ...j,
+          stage: j.stage === 'CHOSEN' ? 'CHOSEN' : 'DISCOVERED'
+        }));
+        setPipelineJobs(fromRadar);
+      }
+    } else {
+      setPipelineJobs(SAMPLE_PIPELINE);
+    }
+  }, [isLive, mounted]);
 
   const selectedJob = pipelineJobs.find((j) => j.id === selectedDrawerId) || null;
 
@@ -87,24 +110,66 @@ export default function JobsPage() {
     <div className="min-h-screen bg-[#080B11] text-[#F8FAFC] p-6 lg:p-8 font-sans">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
-            Opportunity Pipeline
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
+              Opportunity Pipeline
+            </h1>
+            {isLive ? (
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live Pipeline ({pipelineJobs.length} {pipelineJobs.length === 1 ? 'Role' : 'Roles'})
+              </span>
+            ) : (
+              <span className="text-xs font-mono text-[#38BDF8] bg-[#2563EB]/15 border border-[#2563EB]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]"></span>
+                Demo Showcase
+              </span>
+            )}
+          </div>
           <p className="text-sm text-[#94A3B8] mt-1">
             Active application lifecycle tracking from initial radar triage to executive outreach.
           </p>
         </div>
 
-        <Link
-          href="/radar"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm transition-colors"
-        >
-          <span>&larr; Morning Radar</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          <DataModeToggle />
+          <Link
+            href="/radar"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm transition-colors"
+          >
+            <span>&larr; Morning Radar</span>
+          </Link>
+        </div>
       </div>
 
-      {/* 4 Kanban Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+      {isLive && pipelineJobs.length === 0 ? (
+        <div className="bg-[#0F1523] border border-white/10 rounded-xl p-10 text-center max-w-xl mx-auto my-12 shadow-xl">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xl flex items-center justify-center mx-auto mb-4">
+            🛤️
+          </div>
+          <h3 className="text-lg font-bold text-white">Live Pipeline Empty</h3>
+          <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+            You are in <span className="text-emerald-400 font-mono font-medium">Live Testing Mode</span>. Ingest roles on Morning Radar and mark them as <span className="text-emerald-400 font-semibold">CHOSEN</span> to advance them through the multi-stage pipeline.
+          </p>
+          <div className="flex justify-center gap-3 mt-5">
+            <Link
+              href="/radar"
+              className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-semibold shadow-sm transition-colors"
+            >
+              Go to Morning Radar
+            </Link>
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-medium transition-colors"
+            >
+              Switch to Demo Showcase
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* 4 Kanban Columns */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         {stages.map((stage) => {
           const stageJobs = pipelineJobs.filter((j) => j.stage === stage.key);
           return (
@@ -167,7 +232,8 @@ export default function JobsPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Dossier Drawer */}
       <DossierDrawer

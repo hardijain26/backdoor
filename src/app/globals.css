@@ -3,51 +3,84 @@
 @tailwind utilities;
 
 :root {
-  /* Surfaces & Structural Layers */
+  /* Surfaces & Structural Layers (Dark: Obsidian Cobalt) */
   --bg-canvas: #080B11;
-  /* Deep Obsidian Void. Base viewport background. */
   --bg-card: #0F1523;
-  /* Technical Charcoal Slate. 1:1 Bento cards, table rows. */
   --bg-drawer: #161F33;
-  /* Elevated Deep Slate. 640px slide-out dossier drawer. */
+  --bg-subtle: #161F33;
   --border-subtle: rgba(255, 255, 255, 0.08);
-  /* 1px boundary on cards, dividers, headers. */
   --border-elevated: rgba(255, 255, 255, 0.14);
-  /* Hover borders, active drawer edges. */
 
-  /* Brand & Interactive Accents */
+  /* Brand & Interactive Accents (Cobalt Blue) */
   --accent-primary: #2563EB;
-  /* Precision Cobalt Blue. Triggers, active tabs, buttons. */
   --accent-hover: #1D4ED8;
-  /* State hover for primary cobalt triggers. */
   --accent-active: #1E40AF;
-  /* Pressed active state for buttons and links. */
   --accent-ring: #3B82F6;
-  /* Keyboard focus ring (ring-2 ring-blue-500). */
 
   /* Semantic State & Match Score Tints */
   --status-top: #10B981;
-  /* Crisp Emerald. Top Fit (>= 70): High confidence. */
   --status-mid: #0284C7;
-  /* Technical Sky. Exploratory (40-69): Telemetry blue. */
   --status-mid-alt: #38BDF8;
-  /* Technical Sky Light. Foreground text for exploratory. */
   --status-low: #64748B;
-  /* Cool Slate. Stretch (< 40): Below threshold. */
   --status-action: #0D9488;
-  /* Precision Teal. Ready Gmail drafts, verified emails. */
   --status-action-alt: #14B8A6;
-  /* Precision Teal Light. Text highlight for active action. */
   --status-danger: #EF4444;
-  /* High-contrast Red. Skipped roles, ingestion errors. */
 
-  /* High-Contrast Text Hierarchy */
+  /* Executive Sage Tokens (Calibrated desaturated botanical sage) */
+  --sage-text: #8BB49E;
+  --sage-text-light: #A6C9B6;
+  --sage-border: rgba(125, 168, 147, 0.28);
+  --sage-border-subtle: rgba(125, 168, 147, 0.18);
+  --sage-bg-subtle: rgba(90, 140, 116, 0.12);
+  --sage-bg-tint: rgba(90, 140, 116, 0.18);
+  --sage-btn: #3D6E57;
+  --sage-btn-hover: #4B8369;
+
+  /* Text Hierarchy */
   --text-primary: #F8FAFC;
-  /* Contrast ratio 17.5:1 on #080B11. Headings, titles. */
   --text-secondary: #94A3B8;
-  /* Contrast ratio 8.2:1 on #080B11. Descriptions, brief. */
   --text-muted: #475569;
-  /* Contrast ratio 4.8:1 on #080B11. Timestamps, hotkey hints. */
+}
+
+[data-theme="light"],
+.light {
+  /* Surfaces & Structural Layers (Savile Forest Green & Eucalyptus Alabaster) */
+  --bg-canvas: #F7F9F7;
+  --bg-card: #FFFFFF;
+  --bg-drawer: #F2F6F3;
+  --bg-subtle: #F2F6F3;
+  --border-subtle: #E2ECE5;
+  --border-elevated: #C4D8CB;
+
+  /* Brand & Interactive Accents (British Racing Forest Green: AAA Contrast) */
+  --accent-primary: #183D2B;
+  --accent-hover: #122E20;
+  --accent-active: #0D2217;
+  --accent-ring: #2D5A43;
+
+  /* Semantic State (Rich Botanical Forest Sage) */
+  --status-top: #183D2B;
+  --status-mid: #2D5A43;
+  --status-mid-alt: #3B7256;
+  --status-low: #697A70;
+  --status-action: #183D2B;
+  --status-action-alt: #2D5A43;
+  --status-danger: #DC2626;
+
+  /* Executive Sage Tokens (Savile Forest) */
+  --sage-text: #183D2B;
+  --sage-text-light: #2D5A43;
+  --sage-border: #D2E3D8;
+  --sage-border-subtle: #E2ECE5;
+  --sage-bg-subtle: #EDF4EF;
+  --sage-bg-tint: #E2ECE5;
+  --sage-btn: #183D2B;
+  --sage-btn-hover: #122E20;
+
+  /* Text Hierarchy (High-Contrast Obsidian Forest & Slate Olive) */
+  --text-primary: #111A15;
+  --text-secondary: #3B4940;
+  --text-muted: #697A70;
 }
 
 html,
@@ -57,4 +90,370 @@ body {
   font-family: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
   max-width: 100vw;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ==========================================================================
+   Savile Row / British Racing Forest & Eucalyptus Alabaster Light Theme
+   ========================================================================== */
+
+.light body,
+[data-theme="light"] body {
+  background-color: #F7F9F7 !important;
+  color: #111A15 !important;
+}
+
+.light header,
+[data-theme="light"] header {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-color: #E2ECE5 !important;
+  box-shadow: 0 1px 3px rgba(18, 45, 30, 0.04);
+}
+
+/* Background containers and cards */
+.light .bg-\[\#080B11\],
+[data-theme="light"] .bg-\[\#080B11\] {
+  background-color: #F7F9F7 !important;
+}
+
+.light .bg-\[\#0F1523\],
+[data-theme="light"] .bg-\[\#0F1523\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2ECE5 !important;
+  box-shadow: 0 1px 3px rgba(18, 45, 30, 0.04);
+}
+
+.light .bg-\[\#161F33\],
+[data-theme="light"] .bg-\[\#161F33\],
+.light .bg-\[\#161F33\]\/50,
+[data-theme="light"] .bg-\[\#161F33\]\/50,
+.light .bg-\[\#161F33\]\/40,
+[data-theme="light"] .bg-\[\#161F33\]\/40 {
+  background-color: #F2F6F3 !important;
+  border-color: #E2ECE5 !important;
+}
+
+.light .bg-\[\#161F33\]\/60,
+[data-theme="light"] .bg-\[\#161F33\]\/60 {
+  background-color: #E8EFEA !important;
+  border-color: #E2ECE5 !important;
+}
+
+.light .bg-slate-900,
+[data-theme="light"] .bg-slate-900 {
+  background-color: #F2F6F3 !important;
+  border-color: #E2ECE5 !important;
+}
+
+/* Text Overrides */
+.light .text-white,
+[data-theme="light"] .text-white,
+.light .text-\[\#F8FAFC\],
+[data-theme="light"] .text-\[\#F8FAFC\] {
+  color: #111A15 !important;
+}
+
+.light .text-slate-200,
+[data-theme="light"] .text-slate-200,
+.light .text-slate-300,
+[data-theme="light"] .text-slate-300,
+.light .text-slate-400,
+[data-theme="light"] .text-slate-400,
+.light .text-\[\#94A3B8\],
+[data-theme="light"] .text-\[\#94A3B8\] {
+  color: #3B4940 !important;
+}
+
+.light .text-slate-500,
+[data-theme="light"] .text-slate-500 {
+  color: #697A70 !important;
+}
+
+/* Borders */
+.light .border-white\/10,
+[data-theme="light"] .border-white\/10,
+.light .border-white\/5,
+[data-theme="light"] .border-white\/5,
+.light .border-white\/8,
+[data-theme="light"] .border-white\/8,
+.light .border-slate-700,
+[data-theme="light"] .border-slate-700 {
+  border-color: #E2ECE5 !important;
+}
+
+/* Primary Action Buttons (British Racing Forest Green: AAA Contrast) */
+.light .bg-\[\#2563EB\],
+[data-theme="light"] .bg-\[\#2563EB\],
+.light .bg-blue-600,
+[data-theme="light"] .bg-blue-600 {
+  background-color: #183D2B !important;
+  color: #FFFFFF !important;
+}
+
+.light .hover\:bg-blue-500:hover,
+[data-theme="light"] .hover\:bg-blue-500:hover,
+.light .hover\:bg-blue-600:hover,
+[data-theme="light"] .hover\:bg-blue-600:hover,
+.light .hover\:bg-\[\#1D4ED8\]:hover,
+[data-theme="light"] .hover\:bg-\[\#1D4ED8\]:hover {
+  background-color: #122E20 !important;
+  color: #FFFFFF !important;
+}
+
+/* Secondary Accents & Pill Badges */
+.light .text-\[\#38BDF8\],
+[data-theme="light"] .text-\[\#38BDF8\] {
+  color: #183D2B !important;
+}
+
+.light .bg-\[\#2563EB\]\/15,
+[data-theme="light"] .bg-\[\#2563EB\]\/15 {
+  background-color: #EDF4EF !important;
+  color: #183D2B !important;
+  border-color: #D2E3D8 !important;
+}
+
+.light .border-\[\#2563EB\]\/30,
+[data-theme="light"] .border-\[\#2563EB\]\/30 {
+  border-color: #D2E3D8 !important;
+}
+
+.light .text-sky-400,
+[data-theme="light"] .text-sky-400 {
+  color: #2D5A43 !important;
+}
+
+.light .bg-sky-500\/10,
+[data-theme="light"] .bg-sky-500\/10,
+.light .bg-sky-500\/15,
+[data-theme="light"] .bg-sky-500\/15 {
+  background-color: #EDF4EF !important;
+  color: #183D2B !important;
+}
+
+/* Inputs in Light Mode */
+.light input,
+[data-theme="light"] input,
+.light select,
+[data-theme="light"] select,
+.light textarea,
+[data-theme="light"] textarea {
+  background-color: #FFFFFF !important;
+  color: #111A15 !important;
+  border-color: #E2ECE5 !important;
+}
+
+.light input:focus,
+[data-theme="light"] input:focus,
+.light select:focus,
+[data-theme="light"] select:focus,
+.light textarea:focus,
+[data-theme="light"] textarea:focus {
+  border-color: #183D2B !important;
+}
+
+.light input::placeholder,
+[data-theme="light"] input::placeholder {
+  color: #697A70 !important;
+}
+
+/* ==========================================================================
+   Executive Sage Green Design System (Eliminates fluorescent/neon green)
+   ========================================================================== */
+
+/* Dark Mode Sage Skinning */
+.text-emerald-400,
+.dark .text-emerald-400,
+[data-theme="dark"] .text-emerald-400 {
+  color: #8BB49E !important;
+}
+
+.text-emerald-300,
+.dark .text-emerald-300,
+[data-theme="dark"] .text-emerald-300 {
+  color: #A6C9B6 !important;
+}
+
+.text-emerald-500,
+.dark .text-emerald-500,
+[data-theme="dark"] .text-emerald-500 {
+  color: #6E9C85 !important;
+}
+
+.bg-emerald-400,
+.dark .bg-emerald-400,
+[data-theme="dark"] .bg-emerald-400 {
+  background-color: #8BB49E !important;
+}
+
+.bg-emerald-500,
+.dark .bg-emerald-500,
+[data-theme="dark"] .bg-emerald-500 {
+  background-color: #52836C !important;
+}
+
+.bg-emerald-500\/10,
+.dark .bg-emerald-500\/10,
+[data-theme="dark"] .bg-emerald-500\/10 {
+  background-color: rgba(90, 140, 116, 0.12) !important;
+}
+
+.bg-emerald-500\/15,
+.dark .bg-emerald-500\/15,
+[data-theme="dark"] .bg-emerald-500\/15 {
+  background-color: rgba(90, 140, 116, 0.18) !important;
+}
+
+.bg-emerald-500\/20,
+.dark .bg-emerald-500\/20,
+[data-theme="dark"] .bg-emerald-500\/20 {
+  background-color: rgba(90, 140, 116, 0.22) !important;
+}
+
+.bg-emerald-500\/25,
+.dark .bg-emerald-500\/25,
+[data-theme="dark"] .bg-emerald-500\/25 {
+  background-color: rgba(90, 140, 116, 0.28) !important;
+}
+
+.border-emerald-400,
+.dark .border-emerald-400,
+[data-theme="dark"] .border-emerald-400 {
+  border-color: rgba(139, 180, 158, 0.5) !important;
+}
+
+.border-emerald-500\/20,
+.dark .border-emerald-500\/20,
+[data-theme="dark"] .border-emerald-500\/20 {
+  border-color: rgba(125, 168, 147, 0.22) !important;
+}
+
+.border-emerald-500\/30,
+.dark .border-emerald-500\/30,
+[data-theme="dark"] .border-emerald-500\/30 {
+  border-color: rgba(125, 168, 147, 0.32) !important;
+}
+
+.border-emerald-500\/40,
+.dark .border-emerald-500\/40,
+[data-theme="dark"] .border-emerald-500\/40 {
+  border-color: rgba(125, 168, 147, 0.42) !important;
+}
+
+.bg-emerald-600,
+.dark .bg-emerald-600,
+[data-theme="dark"] .bg-emerald-600 {
+  background-color: #3D6E57 !important;
+}
+
+.hover\:bg-emerald-500:hover,
+.dark .hover\:bg-emerald-500:hover,
+[data-theme="dark"] .hover\:bg-emerald-500:hover {
+  background-color: #4B8369 !important;
+}
+
+.hover\:bg-emerald-500\/25:hover,
+.dark .hover\:bg-emerald-500\/25:hover,
+[data-theme="dark"] .hover\:bg-emerald-500\/25:hover {
+  background-color: rgba(90, 140, 116, 0.28) !important;
+}
+
+/* Light Mode Sage Skinning (High Contrast, Botanical Muted Green) */
+.light .text-emerald-400,
+[data-theme="light"] .text-emerald-400,
+.light .text-emerald-300,
+[data-theme="light"] .text-emerald-300,
+.light .text-emerald-500,
+[data-theme="light"] .text-emerald-500 {
+  color: #28523E !important;
+}
+
+.light .bg-emerald-400,
+[data-theme="light"] .bg-emerald-400 {
+  background-color: #3D6E57 !important;
+}
+
+.light .bg-emerald-500,
+[data-theme="light"] .bg-emerald-500 {
+  background-color: #2E5342 !important;
+}
+
+.light .bg-emerald-500\/10,
+[data-theme="light"] .bg-emerald-500\/10 {
+  background-color: rgba(61, 110, 87, 0.08) !important;
+}
+
+.light .bg-emerald-500\/15,
+[data-theme="light"] .bg-emerald-500\/15 {
+  background-color: rgba(61, 110, 87, 0.12) !important;
+}
+
+.light .bg-emerald-500\/20,
+[data-theme="light"] .bg-emerald-500\/20 {
+  background-color: rgba(61, 110, 87, 0.16) !important;
+}
+
+.light .bg-emerald-500\/25,
+[data-theme="light"] .bg-emerald-500\/25 {
+  background-color: rgba(61, 110, 87, 0.22) !important;
+}
+
+.light .border-emerald-400,
+[data-theme="light"] .border-emerald-400 {
+  border-color: rgba(61, 110, 87, 0.4) !important;
+}
+
+.light .border-emerald-500\/20,
+[data-theme="light"] .border-emerald-500\/20 {
+  border-color: rgba(61, 110, 87, 0.20) !important;
+}
+
+.light .border-emerald-500\/30,
+[data-theme="light"] .border-emerald-500\/30 {
+  border-color: rgba(61, 110, 87, 0.28) !important;
+}
+
+.light .border-emerald-500\/40,
+[data-theme="light"] .border-emerald-500\/40 {
+  border-color: rgba(61, 110, 87, 0.38) !important;
+}
+
+.light .bg-emerald-600,
+[data-theme="light"] .bg-emerald-600 {
+  background-color: #2E5342 !important;
+  color: #FFFFFF !important;
+}
+
+.light .hover\:bg-emerald-500:hover,
+[data-theme="light"] .hover\:bg-emerald-500:hover {
+  background-color: #3D6E57 !important;
+  color: #FFFFFF !important;
+}
+
+.light .hover\:bg-emerald-500\/25:hover,
+[data-theme="light"] .hover\:bg-emerald-500\/25:hover {
+  background-color: rgba(61, 110, 87, 0.22) !important;
+}
+
+/* Dedicated Executive Sage Utilities */
+.badge-sage {
+  background-color: var(--sage-bg-subtle);
+  border: 1px solid var(--sage-border);
+  color: var(--sage-text);
+}
+
+.badge-sage-tint {
+  background-color: var(--sage-bg-tint);
+  border: 1px solid var(--sage-border);
+  color: var(--sage-text);
+}
+
+.btn-sage {
+  background-color: var(--sage-btn);
+  color: #FFFFFF;
+  transition: background-color 0.15s ease;
+}
+
+.btn-sage:hover {
+  background-color: var(--sage-btn-hover);
 }

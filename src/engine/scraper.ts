@@ -3,61 +3,70 @@
  * Ingestion across 35 verified sources with SSRF prevention (Rule R6) and negative filters.
  */
 
+export type SourceSection = 'ATS' | 'PLATFORM_API' | 'SOCIAL_INBOUND';
+export type SourceRole = 'all' | 'product' | 'engineering' | 'design' | 'legal' | 'finance';
+export type PlatformCategory = 'remote' | 'startup' | 'product_dynamic' | 'aggregator';
+
 export interface SourceDefinition {
   id: string;
   name: string;
   category: 'ATS_DIRECT' | 'COMPANY_DIRECT' | 'REMOTE_PM_BOARDS' | 'CURATED_COMMUNITIES' | 'INBOUND_CLIPPERS' | 'BYOK_AGGREGATORS';
+  section: SourceSection;
+  platformCategory?: PlatformCategory;
+  applicableRoles: SourceRole[];
   requiresKey: boolean;
   rateLimitMs: number;
 }
 
 export const VERIFIED_SOURCES: SourceDefinition[] = [
-  // 1. ATS Direct (8 Sources)
-  { id: 'greenhouse', name: 'Greenhouse ATS', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'lever', name: 'Lever ATS', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'ashby', name: 'Ashby ATS', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'workable', name: 'Workable ATS', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'smartrecruiters', name: 'SmartRecruiters', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'bamboohr', name: 'BambooHR', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'rippling', name: 'Rippling', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
-  { id: 'recruitee', name: 'Recruitee', category: 'ATS_DIRECT', requiresKey: false, rateLimitMs: 500 },
+  // 1. ATS Direct (8 Sources) — Section: ATS
+  { id: 'greenhouse', name: 'Greenhouse ATS', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'lever', name: 'Lever ATS', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'ashby', name: 'Ashby ATS', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'workable', name: 'Workable ATS', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'smartrecruiters', name: 'SmartRecruiters', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'bamboohr', name: 'BambooHR', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'rippling', name: 'Rippling', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'recruitee', name: 'Recruitee', category: 'ATS_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
 
-  // 2. Company Direct (1 Source)
-  { id: 'careers_jsonld', name: 'Careers JSON-LD Crawler', category: 'COMPANY_DIRECT', requiresKey: false, rateLimitMs: 1000 },
+  // 2. Company Direct (1 Source) — Section: ATS
+  { id: 'careers_jsonld', name: 'Careers JSON-LD Crawler', category: 'COMPANY_DIRECT', section: 'ATS', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 1000 },
 
-  // 3. Remote PM Boards (7 Sources)
-  { id: 'remotive', name: 'Remotive', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'remoteok', name: 'RemoteOK', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'weworkremotely', name: 'We Work Remotely', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'jobspresso', name: 'Jobspresso', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'wellfound', name: 'Wellfound (AngelList)', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'himalayas', name: 'Himalayas', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
-  { id: 'justremote', name: 'JustRemote', category: 'REMOTE_PM_BOARDS', requiresKey: false, rateLimitMs: 500 },
+  // 3. Remote PM Boards (6 Sources) — Section: PLATFORM_API (Category: remote)
+  { id: 'remotive', name: 'Remotive', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['product', 'engineering', 'design'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'remoteok', name: 'RemoteOK', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['product', 'engineering', 'design', 'finance'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'weworkremotely', name: 'We Work Remotely', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'jobspresso', name: 'Jobspresso', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['product', 'design', 'engineering'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'himalayas', name: 'Himalayas', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'justremote', name: 'JustRemote', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'remote', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
 
-  // 4. Curated Tech Communities (10 Sources)
-  { id: 'yc_startup', name: 'YC Work at a Startup', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'hn_hiring', name: 'Hacker News "Who is Hiring"', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'product_hunt', name: 'Product Hunt Jobs', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'lennys_jobs', name: "Lenny's Newsletter Job Board", category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'mind_the_product', name: 'Mind the Product', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'mindstone', name: 'Mindstone', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'otta', name: 'Otta', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'levels_fyi', name: 'Levels.fyi', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'builtin', name: 'BuiltIn', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
-  { id: 'the_muse', name: 'The Muse', category: 'CURATED_COMMUNITIES', requiresKey: false, rateLimitMs: 500 },
+  // 4. Startup Ecosystem Hubs (4 Sources) — Section: PLATFORM_API (Category: startup)
+  { id: 'yc_startup', name: 'YC Work at a Startup', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'startup', applicableRoles: ['engineering', 'product', 'design'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'wellfound', name: 'Wellfound (AngelList)', category: 'REMOTE_PM_BOARDS', section: 'PLATFORM_API', platformCategory: 'startup', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'hn_hiring', name: 'Hacker News "Who is Hiring"', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'startup', applicableRoles: ['engineering', 'product'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'product_hunt', name: 'Product Hunt Jobs', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'startup', applicableRoles: ['product', 'design'], requiresKey: false, rateLimitMs: 500 },
 
-  // 5. Direct Inbound & Clippers (3 Sources)
-  { id: 'google_alerts', name: 'Google Alerts Inbound Webhook', category: 'INBOUND_CLIPPERS', requiresKey: false, rateLimitMs: 0 },
-  { id: 'naukri_webhook', name: 'Naukri Forwarder Webhook', category: 'INBOUND_CLIPPERS', requiresKey: false, rateLimitMs: 0 },
-  { id: 'chrome_clipper', name: 'Chrome Clipper Extension', category: 'INBOUND_CLIPPERS', requiresKey: false, rateLimitMs: 0 },
+  // 5. Product Management & Curated Networks (7 Sources) — Section: PLATFORM_API (Category: product_dynamic)
+  { id: 'lennys_jobs', name: "Lenny's Newsletter Job Board", category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['product', 'engineering'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'mind_the_product', name: 'Mind the Product', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['product'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'mindstone', name: 'Mindstone', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['product', 'engineering'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'otta', name: 'Otta', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'levels_fyi', name: 'Levels.fyi', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['engineering', 'product', 'design', 'finance', 'legal'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'builtin', name: 'BuiltIn', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
+  { id: 'the_muse', name: 'The Muse', category: 'CURATED_COMMUNITIES', section: 'PLATFORM_API', platformCategory: 'product_dynamic', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 500 },
 
-  // 6. BYOK Aggregators (6 Sources)
-  { id: 'apify_greenhouse', name: 'Apify Greenhouse Actor', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 },
-  { id: 'apify_linkedin', name: 'Apify LinkedIn Actor', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 },
-  { id: 'rapidapi_jsearch', name: 'RapidAPI JSearch', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 },
-  { id: 'apollo_jobs', name: 'Apollo Jobs API', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 },
-  { id: 'hunter_leads', name: 'Hunter Tech Leads', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 },
-  { id: 'serpapi_jobs', name: 'SerpApi Google Jobs', category: 'BYOK_AGGREGATORS', requiresKey: true, rateLimitMs: 1000 }
+  // 6. Direct Inbound & Clippers (3 Sources) — Section: SOCIAL_INBOUND
+  { id: 'google_alerts', name: 'Google Alerts Inbound Webhook', category: 'INBOUND_CLIPPERS', section: 'SOCIAL_INBOUND', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 0 },
+  { id: 'naukri_webhook', name: 'Naukri Forwarder Webhook', category: 'INBOUND_CLIPPERS', section: 'SOCIAL_INBOUND', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 0 },
+  { id: 'chrome_clipper', name: 'Chrome Clipper Extension', category: 'INBOUND_CLIPPERS', section: 'SOCIAL_INBOUND', applicableRoles: ['all'], requiresKey: false, rateLimitMs: 0 },
+
+  // 7. BYOK Aggregators (6 Sources) — Section: PLATFORM_API (Category: aggregator)
+  { id: 'apify_greenhouse', name: 'Apify Greenhouse Actor', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 },
+  { id: 'apify_linkedin', name: 'Apify LinkedIn Actor', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 },
+  { id: 'rapidapi_jsearch', name: 'RapidAPI JSearch', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 },
+  { id: 'apollo_jobs', name: 'Apollo Jobs API', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 },
+  { id: 'hunter_leads', name: 'Hunter Tech Leads', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 },
+  { id: 'serpapi_jobs', name: 'SerpApi Google Jobs', category: 'BYOK_AGGREGATORS', section: 'PLATFORM_API', platformCategory: 'aggregator', applicableRoles: ['all'], requiresKey: true, rateLimitMs: 1000 }
 ];
 
 export interface ScrapedJob {
@@ -130,17 +139,30 @@ export function isSafeUrl(rawUrl: string): boolean {
 /**
  * Pre-Storage Negative Filters (Runbook §5.2)
  * Drops postings if:
- * - Title matches: /(marketing|engineering manager|tpm|scrum|recruiter)/i
+ * - Title matches: dynamic regex from customExcludedTitlePatterns or default /(marketing|engineering manager|tpm|scrum|recruiter)/i
  * - Company or description matches: /(fintech|payments|crypto|web3|neo-?bank|lending|p2p)/i
  */
-export function passesNegativeFilters(job: { title: string; company: string; descriptionText?: string }): {
+export function passesNegativeFilters(
+  job: { title: string; company: string; descriptionText?: string },
+  customExcludedTitlePatterns?: string[]
+): {
   passed: boolean;
   reason?: string;
 } {
-  const BANNED_TITLE_REGEX = /(marketing|engineering manager|tpm|scrum|recruiter)/i;
+  let bannedTitleRegex: RegExp;
+  if (customExcludedTitlePatterns && customExcludedTitlePatterns.length > 0) {
+    const escaped = customExcludedTitlePatterns
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    bannedTitleRegex = escaped.length > 0 ? new RegExp(`(${escaped.join('|')})`, 'i') : /(marketing|engineering manager|tpm|scrum|recruiter)/i;
+  } else {
+    bannedTitleRegex = /(marketing|engineering manager|tpm|scrum|recruiter)/i;
+  }
+
   const BANNED_INDUSTRY_REGEX = /(fintech|payments|crypto|web3|neo-?bank|lending|p2p)/i;
 
-  if (BANNED_TITLE_REGEX.test(job.title)) {
+  if (bannedTitleRegex.test(job.title)) {
     return { passed: false, reason: `Excluded title keyword in: "${job.title}"` };
   }
 
@@ -153,6 +175,54 @@ export function passesNegativeFilters(job: { title: string; company: string; des
   }
 
   return { passed: true };
+}
+
+/**
+ * Dynamic Track Query Interpolation for BYOK Aggregators (JSearch, SerpApi Google Jobs, Apollo Jobs)
+ * Passes candidate's active dynamic target titles across multi-role tracks (UX, Legal, Accounting, Engineering, Product).
+ */
+export function buildAggregatorQuery(
+  sourceId: string,
+  targetTitles: string[] = ['Product Manager'],
+  location = 'Remote'
+): { query: string; params: Record<string, string> } {
+  const titles = targetTitles.length > 0 ? targetTitles : ['Product Manager'];
+  const formattedTitles = titles.map((t) => `"${t}"`).join(' OR ');
+
+  switch (sourceId) {
+    case 'rapidapi_jsearch':
+      return {
+        query: `${formattedTitles} ${location}`,
+        params: {
+          query: `${formattedTitles} in ${location}`,
+          page: '1',
+          num_pages: '1',
+          date_posted: 'today',
+        },
+      };
+    case 'serpapi_jobs':
+      return {
+        query: `${formattedTitles} ${location}`,
+        params: {
+          engine: 'google_jobs',
+          q: `${formattedTitles} ${location}`,
+          chips: 'date_posted:today',
+        },
+      };
+    case 'apollo_jobs':
+      return {
+        query: `${formattedTitles}`,
+        params: {
+          job_titles: titles.join(','),
+          person_locations: location,
+        },
+      };
+    default:
+      return {
+        query: `${formattedTitles} ${location}`,
+        params: { q: `${formattedTitles} ${location}` },
+      };
+  }
 }
 
 /**

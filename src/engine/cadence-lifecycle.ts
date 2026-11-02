@@ -220,7 +220,7 @@ export function mapStatusToSwimlane(status: CadenceStepStatus): CadenceSwimlane 
 /**
  * Returns all active campaigns grouped by Kanban swimlane
  */
-export function getCadenceBoard(): {
+export function getCadenceBoard(mode?: 'demo' | 'live'): {
   swimlanes: Record<CadenceSwimlane, CadenceItem[]>;
   metrics: {
     totalActive: number;
@@ -238,14 +238,18 @@ export function getCadenceBoard(): {
     CLOSED: [],
   };
 
-  for (const item of activeCampaigns) {
+  const pool = mode === 'live'
+    ? activeCampaigns.filter((c) => !['cad-1', 'cad-2', 'cad-3'].includes(c.id))
+    : activeCampaigns;
+
+  for (const item of pool) {
     swimlanes[item.swimlane].push(item);
   }
 
   return {
     swimlanes,
     metrics: {
-      totalActive: activeCampaigns.filter((c) => c.swimlane !== 'CLOSED').length,
+      totalActive: pool.filter((c) => c.swimlane !== 'CLOSED').length,
       inConversation: swimlanes.IN_CONVERSATION.length,
       followUpsDue: swimlanes.FOLLOW_UP_DUE.length,
       draftsReady: swimlanes.DRAFT_READY.length,

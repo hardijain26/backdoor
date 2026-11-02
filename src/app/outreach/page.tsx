@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CadenceCard } from '@/components/outreach/CadenceCard';
 import {
   CadenceItem,
   CadenceSwimlane,
   OutreachDoor,
 } from '@/engine/cadence-lifecycle';
+import { useDataMode, DataModeToggle } from '@/components/DataModeToggle';
 
 const SWIMLANE_CONFIG: {
   key: CadenceSwimlane;
@@ -14,37 +15,37 @@ const SWIMLANE_CONFIG: {
   badgeColor: string;
   dotColor: string;
 }[] = [
-  {
-    key: 'DRAFT_READY',
-    title: 'Draft Ready in Gmail',
-    badgeColor: 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30',
-    dotColor: 'bg-[#38BDF8]',
-  },
-  {
-    key: 'SENT',
-    title: 'Sent (Awaiting Reply)',
-    badgeColor: 'bg-white/5 text-slate-300 border-white/10',
-    dotColor: 'bg-slate-400',
-  },
-  {
-    key: 'FOLLOW_UP_DUE',
-    title: 'Follow-Up Due (Day 3/5)',
-    badgeColor: 'bg-[#0284C7]/15 text-[#38BDF8] border-[#0284C7]/30',
-    dotColor: 'bg-[#0284C7]',
-  },
-  {
-    key: 'IN_CONVERSATION',
-    title: 'In Conversation',
-    badgeColor: 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30',
-    dotColor: 'bg-[#10B981]',
-  },
-  {
-    key: 'CLOSED',
-    title: 'Bounced / Archived',
-    badgeColor: 'bg-white/5 text-slate-400 border-white/5',
-    dotColor: 'bg-slate-500',
-  },
-];
+    {
+      key: 'DRAFT_READY',
+      title: 'Draft Ready in Gmail',
+      badgeColor: 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30',
+      dotColor: 'bg-[#38BDF8]',
+    },
+    {
+      key: 'SENT',
+      title: 'Sent (Awaiting Reply)',
+      badgeColor: 'bg-white/5 text-slate-300 border-white/10',
+      dotColor: 'bg-slate-400',
+    },
+    {
+      key: 'FOLLOW_UP_DUE',
+      title: 'Follow-Up Due (Day 3/5)',
+      badgeColor: 'bg-[#0284C7]/15 text-[#38BDF8] border-[#0284C7]/30',
+      dotColor: 'bg-[#0284C7]',
+    },
+    {
+      key: 'IN_CONVERSATION',
+      title: 'In Conversation',
+      badgeColor: 'bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30',
+      dotColor: 'bg-[#10B981]',
+    },
+    {
+      key: 'CLOSED',
+      title: 'Bounced / Archived',
+      badgeColor: 'bg-white/5 text-slate-400 border-white/5',
+      dotColor: 'bg-slate-500',
+    },
+  ];
 
 export default function OutreachPage() {
   const [swimlanes, setSwimlanes] = useState<Record<CadenceSwimlane, CadenceItem[]>>({
@@ -66,13 +67,15 @@ export default function OutreachPage() {
     quotaCap: 40,
   });
 
+  const { mode, isLive, toggleMode, mounted } = useDataMode();
   const [doorFilter, setDoorFilter] = useState<'ALL' | OutreachDoor>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchBoard = async () => {
+  const fetchBoard = useCallback(async (targetMode = mode) => {
     try {
-      const res = await fetch('/api/cadence/board');
+      setIsLoading(true);
+      const res = await fetch(`/api/cadence/board?mode=${targetMode}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -85,11 +88,12 @@ export default function OutreachPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [mode]);
 
   useEffect(() => {
-    fetchBoard();
-  }, []);
+    if (!mounted) return;
+    fetchBoard(mode);
+  }, [mode, mounted, fetchBoard]);
 
   const handleTransition = async (
     cadenceId: string,
@@ -144,9 +148,16 @@ export default function OutreachPage() {
             <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">
               Outreach &amp; Cadence Board
             </h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#2563EB]/15 text-[#38BDF8] border border-[#2563EB]/30">
-              Module 7 Lifecycle Engine
-            </span>
+            {isLive ? (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Live Testing Mode ({metrics.totalActive} Active) &bull; Module 7 Lifecycle Engine
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#2563EB]/15 text-[#38BDF8] border border-[#2563EB]/30">
+                Demo Showcase (Module 7 Lifecycle Engine)
+              </span>
+            )}
           </div>
           <p className="text-sm text-[#94A3B8] mt-1">
             Autonomous multi-channel touchpoint watcher across Pathway 1 (Execs), Pathway 2 (Recruiters), and Pathway 3 (Peers).
@@ -155,6 +166,7 @@ export default function OutreachPage() {
 
         {/* Search & Door Filters */}
         <div className="flex items-center gap-3 flex-wrap">
+          <DataModeToggle />
           <input
             type="text"
             placeholder="Search campaigns..."
@@ -166,20 +178,19 @@ export default function OutreachPage() {
           <div className="inline-flex bg-[#0F1523] border border-white/10 rounded-md p-0.5 text-xs">
             {(
               [
-                { id: 'ALL', label: 'All Pathways' },
-                { id: 'door1', label: '🛤️ Pathway 1: Execs' },
-                { id: 'door2', label: '🛤️ Pathway 2: Recruiters' },
-                { id: 'door3', label: '🛤️ Pathway 3: Peers' },
+                { id: 'ALL', label: 'All Doors' },
+                { id: 'door1', label: '🚪 Door 1: Execs' },
+                { id: 'door2', label: '🚪 Door 2: Recruiters' },
+                { id: 'door3', label: '🚪 Door 3: Peers' },
               ] as const
             ).map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setDoorFilter(tab.id)}
-                className={`px-2.5 py-1 rounded font-medium transition-colors ${
-                  doorFilter === tab.id
+                className={`px-2.5 py-1 rounded font-medium transition-colors ${doorFilter === tab.id
                     ? 'bg-[#2563EB] text-white'
                     : 'text-[#94A3B8] hover:text-white'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -248,6 +259,26 @@ export default function OutreachPage() {
           <span className="text-[#10B981]">● Auto-Halt on Reply</span>
         </div>
       </div>
+
+      {isLive && metrics.totalActive === 0 && !isLoading && (
+        <div className="bg-[#0F1523] border border-white/10 rounded-xl p-8 text-center max-w-xl mx-auto mb-6 shadow-xl">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xl flex items-center justify-center mx-auto mb-3">
+            ✉️
+          </div>
+          <h3 className="text-base font-semibold text-white">No Live Outreach Staged Yet</h3>
+          <p className="text-xs text-[#94A3B8] mt-1.5 max-w-md mx-auto leading-relaxed">
+            Select a role on Morning Radar or Pipeline, open the Dossier Drawer, and click &ldquo;Stage Outreach Draft&rdquo; to triangulate executive, recruiter, and peer drafts here.
+          </p>
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={toggleMode}
+              className="px-3.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 hover:text-white transition-colors"
+            >
+              Switch to Demo Showcase
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 5-Column Kanban Board */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">

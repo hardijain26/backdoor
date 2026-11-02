@@ -203,13 +203,16 @@ Every module requirement and automated background job must strictly follow these
 *   **M2-FR8 (P0) Universal Ingest Modal:**
     *   Accepts any careers URL, LinkedIn job URL, raw Slack/WhatsApp text, or tweet URL.
     *   Parses schema.org `JobPosting` JSON-LD, OpenGraph, or uses regex/LLM parsing. Shows preview card before saving.
-*   **M2-FR13 (P0) Inbound Email Digest Engines (LinkedIn Alerts, Naukri India & Google Alerts):**
-    *   *Dedicated Routing Address:* Each candidate workspace receives a dedicated email inbound address `jobs+<uid>@inbound.<domain>` provisioned via Cloudflare Email Routing + Worker, routing payloads to `/api/webhooks/inbound-mail`.
-    *   *LinkedIn Email Digest Parser:* Parses batch job alert notifications from LinkedIn. Isolates job cards, cleans tracking redirect parameters (`trk=`, `trkInfo=`), and creates canonical `linkedin.com/jobs/view/...` postings.
+*   **M2-FR13 (P0) Autonomous Email Digest Ingestion (Direct Gmail API & Forwarding Webhooks):**
+    *   *Direct Gmail API Ingestion (Forward-Free Autonomous Scanning):* Bypasses manual email forwarding by leveraging the candidate's existing connected Google OAuth token (`gmail.readonly` scope). The autonomous runner sweeps the candidate's Gmail inbox at 04:00 AM (or via on-demand "Sync Inbox" trigger) targeting:
+        *   `from:(jobalerts-noreply@linkedin.com) newer_than:1d` $\to$ tags `source = 'linkedin_alert'`
+        *   `from:(alerts@naukri.com) newer_than:1d` $\to$ tags `source = 'naukri_alert'`
+    *   *Fallback Dedicated Inbound Webhook:* For non-Gmail candidates, provides dedicated routing address `jobs+<uid>@inbound.<domain>` provisioned via Cloudflare Email Routing + Worker, routing payloads to `/api/webhooks/inbound-mail`.
+    *   *LinkedIn Email Digest Parser:* Parses batch job alert notifications from LinkedIn. Isolates job cards, cleans tracking redirect parameters (`trk=`, `trkInfo=`), and creates canonical `linkedin.com/jobs/view/...` postings attributed to source `linkedin_alert`.
     *   *Naukri India Hiring Parser:* Designed specifically for Indian tech hiring dynamics:
         *   Extracts CTC compensation ranges formatted in Lacs/LPA (`₹20 - 40 Lacs P.A.`, `18-30 LPA`).
         *   Normalizes Indian metropolitan tech clusters (`Bengaluru / Bangalore`, `Delhi / NCR / Gurgaon / Noida`, `Hyderabad / Secunderabad`, `Pune`, `Mumbai`, `Chennai`).
-        *   Unwraps Naukri redirection tokens to extract genuine apply links and parses recruiter profiles for automatic Door 2 Recruiter lead enrichment.
+        *   Unwraps Naukri redirection tokens to extract genuine apply links, attributes source `naukri_alert`, and parses recruiter profiles for automatic Door 2 Recruiter lead enrichment.
 *   **M2-FR16 (P1) Slack Community Channel Ingestion Engine:**
     *   *Channel Listener:* Integrates with candidate-joined professional Slack communities (e.g. Lenny's Newsletter community, Mind the Product, Tech Workers Club, Designers Guild, YC Founders) across designated hiring channels (`#jobs`, `#hiring`, `#job-board`).
     *   *Integration Architecture:* Listens via Backdoor Slack App bot token (`channels:history` permission) or channel incoming webhooks.
@@ -227,6 +230,13 @@ Every module requirement and automated background job must strictly follow these
     *   *Canonical Deduplication:* Evaluates match key `dedup_match_key = normalized_company + normalized_title`. Merges new URLs/locations into existing job entities or creates new `jobs` with `source = 'bulk_upload'`.
     *   *Immediate Module 3 Pass-Through:* Ingested rows bypass long scraping queues and immediately enter Module 3 deterministic scoring (Tiers 1 and 2), populating fit scores in $< 500\text{ ms}$.
     *   *Template Download Endpoint:* Serves a downloadable standardized 6-column CSV/XLSX template via `GET /api/ingest/template` with header definitions and sample valid row.
+*   **M2-FR17 (P0) Categorized Platform Feeds (Remote, Startups, Product) & Regional API Search Integration:**
+    *   *Categorized Platform Tiers:* Partitions Platform & Community Feeds (`section === 'PLATFORM_API'`) into dedicated functional categories:
+        *   **Remote Opportunities:** Curated remote job boards (`remotive`, `remoteok`, `weworkremotely`, `jobspresso`, `himalayas`, `justremote`).
+        *   **Startup Opportunities:** High-velocity venture startup hubs (`yc_startup`, `wellfound`, `hn_hiring`, `product_hunt`).
+        *   **Product Management & Dynamic Roles:** High-signal Product Management communities & curated career networks (`lennys_jobs`, `mind_the_product`, `mindstone`, `otta`, `levels_fyi`, `builtin`, `the_muse`).
+    *   *Dynamic Track Relevance Filtering:* Restricts default view to platforms mapped to Product Management and the candidate's active dynamic tracks, avoiding non-relevant engineering-only or finance-only platforms.
+    *   *Regional & Role-Based API Discovery Hub:* Interactive catalog of popular job APIs and aggregators filterable by role (Product Manager, AI PM, Engineering, UX, Finance) and geographic region (India, US, UK, EU, Remote, Global). Provides 1-click BYOK integration allowing candidates to supply their API keys / tokens / endpoints directly into their ingestion pipeline.
 
 #### 3. Edge Cases & Fallback Strategies
 *   **Target Company Changes ATS Board:** Old board returns 404 $\to$ flagged on Source Health dashboard. When Hardi pastes a new link from that company, the system auto-detects the new ATS platform and updates the company's crawler configuration.
@@ -451,6 +461,8 @@ Every module requirement and automated background job must strictly follow these
         *   *All Scored Pool:* Complete catalog of all discovered opportunities across all sources with their respective status badges (`DISCOVERED`, `CHOSEN`, `SKIPPED`).
     *   **Crawl Scope Switcher:** UI toggle between `⚡ 15-Day Discovery (First Login)` and `Past 24 Hours (Daily Crawl)`.
     *   **Density Focus Selector:** Toggle between `Top 12 Focus` (compact triage) and `All Opportunities` (complete inventory without artificial cutoffs).
+    *   **Dual-View Multi-Source Filter (Kanban & List):** A persistent, real-time source filter selector (`Filter by Source: [All Sources ▾]`) operational identically across both the 1:1 Bento Cards (Kanban view) and Dense Command Table (List view). Dynamically filters opportunities by originating platform (e.g. `LinkedIn Alerts`, `Naukri Alerts`, `Greenhouse`, `Lever`, `Ashby`, `Twitter/X`, `Slack Channels`, `Y Combinator`, etc.) while preserving continuous match-score sorting, keyboard shortcuts (`j`/`k`/`s`/`c`), and unread triage counts.
+    *   **Granular Source Provenance Badging:** Every opportunity in both views displays an explicit, high-contrast provenance badge identifying the exact ingest vector (`LinkedIn Alert`, `Naukri Alert`, `Greenhouse ATS`, `Twitter/X Scout`, `Slack #jobs`), ensuring instant clarity on where each role originated.
 *   **M9-FR2 (P0) Dual-View Switcher:**
     *   Seamless toggle between 1:1 Bento Cards and Dense Command Table without state loss.
 *   **M9-FR3 (P0) Mouse-Free Keyboard Navigation:**

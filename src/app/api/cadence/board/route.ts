@@ -1,10 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getCadenceBoard } from '@/engine/cadence-lifecycle';
 import { getRemainingDraftQuota } from '@/engine/cadence';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const board = getCadenceBoard();
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get('mode') as 'demo' | 'live' | null;
+    const board = getCadenceBoard(mode || undefined);
     const quota = getRemainingDraftQuota();
 
     return NextResponse.json({
