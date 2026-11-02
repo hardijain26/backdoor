@@ -316,6 +316,81 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     postedHoursAgo: 348, // 14.5 days ago
     door1: { name: 'Abhinav A.', title: 'CEO' },
     door2: { name: 'Siddhartha B.', title: 'VP Product' }
+  },
+  {
+    id: 'job-21',
+    company: 'Brex',
+    title: 'Lead Product Manager, Corporate Treasury',
+    fitScore: 89,
+    stage: 'DISCOVERED',
+    location: 'Remote (US)',
+    workplace: 'remote',
+    salary: '$185,000 - $240,000 + Equity',
+    source: 'smartrecruiters',
+    postedHoursAgo: 96, // 4 days ago
+    door1: { name: 'Henrique D.', title: 'Co-CEO' },
+    door2: { name: 'Lucas F.', title: 'Director of Talent' },
+    door3: { name: 'Marco V.', title: 'Staff PM' }
+  },
+  {
+    id: 'job-22',
+    company: 'GitLab',
+    title: 'Senior PM, Cloud Governance & DevSecOps',
+    fitScore: 86,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$175,000 - $220,000 + Equity',
+    source: 'bamboohr',
+    postedHoursAgo: 144, // 6 days ago
+    door1: { name: 'Sid S.', title: 'CEO' },
+    door2: { name: 'Tanya B.', title: 'Head of People' },
+    door3: { name: 'David M.', title: 'Senior PM' }
+  },
+  {
+    id: 'job-23',
+    company: 'Ramp',
+    title: 'Staff PM, Financial Intelligence & Spend',
+    fitScore: 91,
+    stage: 'DISCOVERED',
+    location: 'New York, NY',
+    workplace: 'hybrid',
+    salary: '$200,000 - $265,000 + Top Tier Equity',
+    source: 'rippling',
+    postedHoursAgo: 192, // 8 days ago
+    door1: { name: 'Eric G.', title: 'CEO' },
+    door2: { name: 'Ashley K.', title: 'Talent Acquisition' },
+    door3: { name: 'Colin M.', title: 'Lead PM' }
+  },
+  {
+    id: 'job-24',
+    company: 'Miro',
+    title: 'Principal PM, Visual Workflows & AI Canvas',
+    fitScore: 83,
+    stage: 'DISCOVERED',
+    location: 'Amsterdam / Remote (EU)',
+    workplace: 'remote',
+    salary: '€140,000 - €185,000 + RSUs',
+    source: 'recruitee',
+    postedHoursAgo: 216, // 9 days ago
+    door1: { name: 'Andrey K.', title: 'CEO' },
+    door2: { name: 'Elena D.', title: 'Talent Partner' },
+    door3: { name: 'Paul N.', title: 'Product Director' }
+  },
+  {
+    id: 'job-25',
+    company: 'Spotify',
+    title: 'Group PM, Audio Platform & Recommendations',
+    fitScore: 88,
+    stage: 'DISCOVERED',
+    location: 'Stockholm / Remote (EU/US)',
+    workplace: 'remote',
+    salary: '$190,000 - $245,000 + RSUs',
+    source: 'careers_jsonld',
+    postedHoursAgo: 288, // 12 days ago
+    door1: { name: 'Daniel E.', title: 'CEO' },
+    door2: { name: 'Gustav S.', title: 'VP Product' },
+    door3: { name: 'Astrid L.', title: 'Talent Lead' }
   }
 ];
 
@@ -346,16 +421,65 @@ export default function MorningRadarPage() {
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Sync jobs whenever data mode (Live vs Demo) changes
+  // Source settings state (tracks enabled sources from Settings & Vault)
+  const [enabledSourceIds, setEnabledSourceIds] = useState<Set<string> | null>(null);
+
+  // Load enabled sources from settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.sources) {
+          const enabled = new Set<string>(
+            data.settings.sources.filter((s: any) => s.enabled).map((s: any) => s.id.toLowerCase())
+          );
+          setEnabledSourceIds(enabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Compute unified job pool combining 15-day onboarding crawl jobs from enabled sources + live ingested jobs
   useEffect(() => {
     if (!mounted) return;
+
+    // Filter 15-day onboarding crawl jobs by enabled sources in Settings
+    const activeCrawlJobs = INITIAL_RADAR_JOBS.filter((j) => {
+      if (!enabledSourceIds) return true; // before settings resolve, keep all active
+      const src = (j.source || '').toLowerCase();
+      return enabledSourceIds.has(src);
+    });
+
     if (isLive) {
+      // In Live Mode: merge live ingested jobs (Gmail alerts, Clipper, Bulk upload)
+      // with active 15-day discovery crawl jobs from enabled sources
       const live = getLiveJobs<RadarJobItem>();
-      setJobs(live);
+      const seen = new Set<string>();
+      const merged: RadarJobItem[] = [];
+
+      // Prioritize live ingested roles
+      for (const j of live) {
+        const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(j);
+        }
+      }
+
+      // Merge active 15-day onboarding crawl roles from enabled sources
+      for (const j of activeCrawlJobs) {
+        const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(j);
+        }
+      }
+
+      setJobs(merged);
     } else {
-      setJobs(INITIAL_RADAR_JOBS);
+      setJobs(activeCrawlJobs);
     }
-  }, [isLive, mounted]);
+  }, [isLive, mounted, enabledSourceIds]);
 
   // On mount: fetch any existing backend Gmail alert jobs from store
   useEffect(() => {
@@ -364,9 +488,9 @@ export default function MorningRadarPage() {
       .then((data) => {
         if (data.success && data.jobs && data.jobs.length > 0) {
           setJobs((prev) => {
-            const existingIds = new Set(prev.map((j) => j.id));
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
             const newItems: RadarJobItem[] = data.jobs
-              .filter((j: any) => !existingIds.has(j.id))
+              .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
               .map((j: any) => ({
                 id: j.id,
                 company: j.company,
@@ -382,9 +506,18 @@ export default function MorningRadarPage() {
                 door2: j.door2,
                 door3: j.door3,
               }));
+            if (newItems.length === 0) return prev;
             const updated = [...newItems, ...prev];
             if (isLive) {
-              saveLiveJobs(updated);
+              const liveOnly = updated.filter(
+                (j) =>
+                  j.id.startsWith('gmail-') ||
+                  j.id.startsWith('ingest-') ||
+                  j.id.startsWith('bulk-') ||
+                  j.source === 'linkedin_alert' ||
+                  j.source === 'naukri_alert'
+              );
+              saveLiveJobs(liveOnly);
             }
             return updated;
           });
@@ -530,7 +663,15 @@ export default function MorningRadarPage() {
             }));
           const updated = [...newItems, ...prev];
           if (isLive) {
-            saveLiveJobs(updated);
+            const liveOnly = updated.filter(
+              (j) =>
+                j.id.startsWith('gmail-') ||
+                j.id.startsWith('ingest-') ||
+                j.id.startsWith('bulk-') ||
+                j.source === 'linkedin_alert' ||
+                j.source === 'naukri_alert'
+            );
+            saveLiveJobs(liveOnly);
           }
           return updated;
         });
@@ -616,7 +757,15 @@ export default function MorningRadarPage() {
     setJobs((prev) => {
       const updated = [radarItem, ...prev];
       if (isLive) {
-        saveLiveJobs(updated);
+        const liveOnly = updated.filter(
+          (j) =>
+            j.id.startsWith('gmail-') ||
+            j.id.startsWith('ingest-') ||
+            j.id.startsWith('bulk-') ||
+            j.source === 'linkedin_alert' ||
+            j.source === 'naukri_alert'
+        );
+        saveLiveJobs(liveOnly);
       }
       return updated;
     });
@@ -645,7 +794,15 @@ export default function MorningRadarPage() {
       setJobs((prev) => {
         const updated = [...mapped, ...prev];
         if (isLive) {
-          saveLiveJobs(updated);
+          const liveOnly = updated.filter(
+            (j) =>
+              j.id.startsWith('gmail-') ||
+              j.id.startsWith('ingest-') ||
+              j.id.startsWith('bulk-') ||
+              j.source === 'linkedin_alert' ||
+              j.source === 'naukri_alert'
+          );
+          saveLiveJobs(liveOnly);
         }
         return updated;
       });
@@ -675,12 +832,12 @@ export default function MorningRadarPage() {
             {isLive ? (
               <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Live Testing Mode ({jobs.length} Real {jobs.length === 1 ? 'Role' : 'Roles'})
+                Active Radar ({jobs.length} Opportunities &bull; 35 Sources)
               </span>
             ) : (
               <span className="text-xs font-mono text-[#38BDF8] bg-[#2563EB]/15 border border-[#2563EB]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]"></span>
-                Demo Showcase (Sample Roles)
+                Demo Showcase ({jobs.length} Opportunities)
               </span>
             )}
           </div>
