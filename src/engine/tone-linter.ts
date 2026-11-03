@@ -110,3 +110,4 @@ export function lintExecutiveTone(text: string): ToneLintResult {
     cleanedText: cleaned
   };
 }
+

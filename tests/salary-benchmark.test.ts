@@ -39,3 +39,4 @@ test('UT-SAL-04: Computes P75 and P90 percentiles with badge labeling', () => {
   assert.strictEqual(b2.percentile, 'P25');
   assert.strictEqual(b2.isAboveMarketMedian, false);
 });
+

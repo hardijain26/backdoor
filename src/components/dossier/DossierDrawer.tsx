@@ -11,6 +11,7 @@ import {
 } from '@/engine/cadence';
 import { evaluateTier3Dossier, Tier3SynthesisResult } from '@/engine/tier3-eval';
 import { executeDualPassPipeline, CriticReviewResult } from '@/engine/dual-pass-drafter';
+import { getCompanyResearch, CompanyResearchIntel } from '@/engine/company-research';
 
 export interface DossierJobData {
   id: string;
@@ -176,6 +177,11 @@ export function DossierDrawer({
 
   const targetFirstName = targetName.split(' ')[0] || 'there';
 
+  const companyIntel: CompanyResearchIntel | null = React.useMemo(() => {
+    if (!job?.company) return null;
+    return getCompanyResearch(job.company);
+  }, [job?.company]);
+
   const dualPassResult: CriticReviewResult | null = React.useMemo(() => {
     if (!job) return null;
     const doorType =
@@ -185,15 +191,26 @@ export function DossierDrawer({
         ? 'DOOR_2_TALENT'
         : 'DOOR_3_PEER';
 
+    const hooks: string[] = [];
+    if (companyIntel?.conversationHooks?.productHook) {
+      hooks.push(companyIntel.conversationHooks.productHook);
+    }
+    if (companyIntel?.conversationHooks?.growthHook) {
+      hooks.push(companyIntel.conversationHooks.growthHook);
+    }
+    if (job.companyBrief) {
+      hooks.push(job.companyBrief);
+    }
+
     return executeDualPassPipeline({
       candidateName: 'Hardi Jain',
       targetCompany: job.company,
       targetRole: job.title,
       doorType,
       recipientName: targetFirstName,
-      conversationHooks: job.companyBrief ? [job.companyBrief] : undefined,
+      conversationHooks: hooks.length > 0 ? hooks : undefined,
     });
-  }, [job, selectedDoor, targetFirstName]);
+  }, [job, selectedDoor, targetFirstName, companyIntel]);
 
   useEffect(() => {
     if (job) {
@@ -684,13 +701,84 @@ export function DossierDrawer({
               <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-[#0F1523] border border-white/8 text-xs">
                 <div>
                   <span className="text-slate-400 block mb-0.5">Funding Stage</span>
-                  <span className="font-medium text-[#F8FAFC]">{job.funding || 'Series B ($48M Raised)'}</span>
+                  <span className="font-medium text-[#F8FAFC]">
+                    {companyIntel?.fundingStage || job.funding || 'Series B ($48M Raised)'}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">Headcount & Velocity</span>
-                  <span className="font-medium text-[#F8FAFC]">{job.headcount || '120-180 employees (+32% YoY)'}</span>
+                  <span className="text-slate-400 block mb-0.5">Headcount &amp; Velocity</span>
+                  <span className="font-medium text-[#F8FAFC]">
+                    {companyIntel?.headcount || job.headcount || '120-180 employees (+32% YoY)'}
+                  </span>
                 </div>
               </div>
+
+              {/* Executive Conversation Hooks (30-Day Intelligence Cache) */}
+              {companyIntel && (
+                <div className="p-3.5 rounded-lg bg-[#0F1523] border border-white/8 space-y-3 text-xs">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white text-xs">
+                        Executive Conversation Hooks
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                        {companyIntel.fromCache ? '⚡ 30-Day Cache Hit' : '✓ Fresh Verified Intel'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      Auto-injected into Door 1 Pitch
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-[11px]">
+                    <div className="p-2.5 rounded bg-[#161F33]/60 border border-white/5 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-mono text-[#38BDF8] uppercase tracking-wider block font-semibold">
+                          🚀 Recent Product &amp; Feature Milestone
+                        </span>
+                        <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded">
+                          Door 1 Hook
+                        </span>
+                      </div>
+                      <p className="text-slate-300 leading-relaxed font-sans">
+                        {companyIntel.conversationHooks.productHook}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded bg-[#161F33]/60 border border-white/5 space-y-1">
+                      <span className="text-[9px] font-mono text-[#10B981] uppercase tracking-wider block font-semibold">
+                        📈 Strategic Growth &amp; Traction Inflection
+                      </span>
+                      <p className="text-slate-300 leading-relaxed font-sans">
+                        {companyIntel.conversationHooks.growthHook}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded bg-[#161F33]/60 border border-white/5 space-y-1">
+                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block font-semibold">
+                        🎯 Executive Leadership Priority
+                      </span>
+                      <p className="text-slate-300 leading-relaxed font-sans">
+                        {companyIntel.conversationHooks.teamHook}
+                      </p>
+                    </div>
+                  </div>
+
+                  {companyIntel.techStack.length > 0 && (
+                    <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono text-slate-400 mr-1">Verified Stack:</span>
+                      {companyIntel.techStack.map((tech) => (
+                        <span
+                          key={tech}
+                          className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-300 border border-white/10"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] mb-2">

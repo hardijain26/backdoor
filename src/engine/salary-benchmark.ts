@@ -148,3 +148,4 @@ export function benchmarkSalary(salaryStr: string, jobTitle: string): SalaryBenc
     isAboveMarketMedian: midpoint >= grid.p50
   };
 }
+

@@ -55,3 +55,4 @@ test('UT-DUAL-03: Critic strips forbidden cliches and produces sanitized approve
   assert.strictEqual(result.finalApprovedText.includes('passionate about'), false);
   assert.strictEqual(result.finalApprovedText.includes('great fit'), false);
 });
+

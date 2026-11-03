@@ -4,6 +4,7 @@
  */
 
 import { isSafeUrl } from './scraper';
+import { sanitizeUntrustedPosting } from './posting-guard';
 
 export interface IngestedJobMetadata {
   title: string;
@@ -155,12 +156,15 @@ export function extractJobMetadataFromHtml(html: string, originalUrl: string): I
     source = 'universal_ingest';
   }
 
+  const sanitizedDesc = sanitizeUntrustedPosting(description || 'Role ingested via Universal Ingest Engine.').cleanedText;
+  const sanitizedTitle = sanitizeUntrustedPosting(title || 'Product Manager').cleanedText;
+
   return {
-    title: title || 'Product Manager',
+    title: sanitizedTitle || 'Product Manager',
     company: company || 'Technology Company',
     location: location || 'Remote',
     salary,
-    description: description || 'Role ingested via Universal Ingest Engine.',
+    description: sanitizedDesc || 'Role ingested via Universal Ingest Engine.',
     applyUrl: originalUrl,
     source
   };
@@ -211,11 +215,11 @@ export function extractJobFromRawText(rawText: string): IngestedJobMetadata {
   const applyUrl = urlMatch ? urlMatch[0] : '';
 
   return {
-    title,
-    company,
+    title: sanitizeUntrustedPosting(title).cleanedText,
+    company: sanitizeUntrustedPosting(company).cleanedText,
     location: rawText.toLowerCase().includes('remote') ? 'Remote (US/Global)' : 'San Francisco, CA',
     salary,
-    description: rawText.slice(0, 2000),
+    description: sanitizeUntrustedPosting(rawText.slice(0, 2000)).cleanedText,
     applyUrl: applyUrl || 'https://backdoor.app/ingest',
     source: 'pasted_text'
   };

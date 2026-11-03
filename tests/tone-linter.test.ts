@@ -42,3 +42,4 @@ test('UT-TONE-04: Clean executive text passes with 100/100 score', () => {
   assert.strictEqual(result.violations.length, 0);
   assert.strictEqual(result.cleanedText, clean);
 });
+
