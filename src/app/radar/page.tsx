@@ -513,6 +513,7 @@ export default function MorningRadarPage() {
   // Dual-View Source Filter (S6-T09)
   const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [isSyncingGmail, setIsSyncingGmail] = useState<boolean>(false);
+  const [isSyncingYc, setIsSyncingYc] = useState<boolean>(false);
 
   // Quick Filters
   const [filterCategory, setFilterCategory] = useState<'all' | 'high_fit' | 'remote' | 'chosen'>('all');
@@ -634,6 +635,25 @@ export default function MorningRadarPage() {
   // On mount: fetch any existing backend webhook jobs from store (Browse.ai, Apify)
   useEffect(() => {
     fetch('/api/ingest/webhook')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+            const newItems: RadarJobItem[] = data.jobs.filter(
+              (j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
+            );
+            if (newItems.length === 0) return prev;
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isLive]);
+
+  // On mount: fetch autonomous YC Startup roles from crawler cache
+  useEffect(() => {
+    fetch('/api/ingest/yc')
       .then((res) => res.json())
       .then((data) => {
         if (data.jobs && data.jobs.length > 0) {
@@ -809,6 +829,62 @@ export default function MorningRadarPage() {
       console.error('Failed to sync gmail alerts:', err);
     } finally {
       setIsSyncingGmail(false);
+    }
+  };
+
+  const handleSyncYcStartups = async () => {
+    setIsSyncingYc(true);
+    try {
+      const res = await fetch('/api/ingest/yc', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.jobs && data.jobs.length > 0) {
+        setJobs((prev) => {
+          const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+          const newItems: RadarJobItem[] = data.jobs
+            .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
+            .map((j: any) => ({
+              id: j.id,
+              company: j.company,
+              title: j.title,
+              fitScore: j.fitScore,
+              stage: 'DISCOVERED',
+              location: j.location,
+              workplace: j.workplace,
+              salary: j.salary,
+              source: 'yc_startup',
+              postedHoursAgo: j.postedHoursAgo || 6,
+              door1: j.door1,
+              door2: j.door2,
+              door3: j.door3,
+            }));
+          const updated = [...newItems, ...prev];
+          if (isLive) {
+            const liveOnly = updated.filter(
+              (j) =>
+                j.id.startsWith('gmail-') ||
+                j.id.startsWith('ingest-') ||
+                j.id.startsWith('bulk-') ||
+                j.id.startsWith('yc-') ||
+                j.source === 'yc_startup' ||
+                j.source === 'linkedin_alert' ||
+                j.source === 'naukri_alert'
+            );
+            saveLiveJobs(liveOnly);
+          }
+          return updated;
+        });
+        setBulkToast(`⚡ Autonomous agent ingested ${data.count} live YC Product roles!`);
+        setTimeout(() => setBulkToast(null), 4000);
+      } else {
+        setBulkToast('YC mirror checked: all roles already synced & deduplicated.');
+        setTimeout(() => setBulkToast(null), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to sync YC roles:', err);
+      setBulkToast('Failed to sync YC roles. Please verify network connectivity.');
+      setTimeout(() => setBulkToast(null), 4000);
+    } finally {
+      setIsSyncingYc(false);
     }
   };
 
@@ -1034,6 +1110,23 @@ export default function MorningRadarPage() {
               </>
             ) : (
               <span>⚡ Sync Gmail</span>
+            )}
+          </button>
+
+          {/* Autonomous YC Startup Sync Trigger (Free Native Agent) */}
+          <button
+            onClick={handleSyncYcStartups}
+            disabled={isSyncingYc}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#0F1523] hover:bg-[#161F33] text-[#8da693] border border-[#8da693]/40 shadow-sm flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Autonomous Free Agent: Sync 200+ YC Product Manager roles directly from Work at a Startup"
+          >
+            {isSyncingYc ? (
+              <>
+                <div className="w-3 h-3 border-2 border-[#8da693] border-t-transparent rounded-full animate-spin" />
+                <span>Syncing YC...</span>
+              </>
+            ) : (
+              <span>⚡ Sync YC Startups</span>
             )}
           </button>
 

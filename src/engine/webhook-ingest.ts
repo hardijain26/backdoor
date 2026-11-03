@@ -32,3 +32,4 @@ export function clearWebhookIngestedJobs(): void {
 export function addWebhookIngestedJob(job: WebhookJobItem): void {
   webhookJobStore.unshift(job);
 }
+
