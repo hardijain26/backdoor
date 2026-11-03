@@ -58,24 +58,12 @@ test('IT-SET-02: Rule R7 Color Blacklist Audit across Settings Subsystem', () =>
   }
 });
 
-test('IT-SET-03: SettingsPage Tri-Segmented Source Fleet, Multi-Role Tabs & Inbound Streams SSR verification', () => {
+test('IT-SET-03: SettingsPage Source Toggles SSR verification with Sections 1 & 2 omitted', () => {
   const html = renderToString(<SettingsWorkspace initialTab="sources" />);
 
-  // Section 1: Popular ATS Systems
-  assert.ok(html.includes('1. Popular ATS Systems'), 'Must render Section 1 header');
-  assert.ok(html.includes('9 Direct Sources'), 'Must render 9 Direct ATS sources badge');
-  assert.ok(html.includes('Greenhouse ATS') && html.includes('Lever ATS') && html.includes('Ashby ATS'), 'Must render core ATS cards');
-  assert.ok(html.includes('Disable All ATS') || html.includes('Enable All ATS'), 'Must render master ATS toggle');
-  assert.ok(html.includes('Add ATS'), 'Must render Add ATS button');
-
-  // Section 2: Platform & Community Feeds
-  assert.ok(html.includes('2. Platform &amp; Community Feeds') || html.includes('2. Platform & Community Feeds'), 'Must render Section 2 header');
-  assert.ok(html.includes('23 Multi-Role Feeds'), 'Must render 23 multi-role feeds badge');
-  assert.ok(html.includes('All Feeds (23)') && html.includes('Design &amp; UX') || html.includes('Design & UX'), 'Must render role filter pills');
-  assert.ok(html.includes('Remote Jobs (6)'), 'Must render Remote Jobs tab');
-  assert.ok(html.includes('Startup Jobs (4)'), 'Must render Startup Jobs tab (YC & Wellfound)');
-  assert.ok(html.includes('Product &amp; Dynamic (7)') || html.includes('Product & Dynamic (7)'), 'Must render Product & Dynamic tab');
-  assert.ok(html.includes('Job API Marketplace &amp; Open Source Registry') || html.includes('Job API Marketplace & Open Source Registry'), 'Must render Job API Marketplace');
+  // Sections 1 & 2 are temporarily omitted per user request
+  assert.strictEqual(html.includes('1. Popular ATS Systems'), false, 'Section 1 must be omitted');
+  assert.strictEqual(html.includes('2. Platform &amp; Community Feeds'), false, 'Section 2 must be omitted');
 
   // Section 3: Inbound Streams
   assert.ok(html.includes('3. Public Social, Community &amp; Inbound Messaging Streams') || html.includes('3. Public Social, Community & Inbound Messaging Streams'), 'Must render Section 3 header');
