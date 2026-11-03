@@ -631,6 +631,25 @@ export default function MorningRadarPage() {
       .catch(() => {});
   }, [isLive]);
 
+  // On mount: fetch any existing backend webhook jobs from store (Browse.ai, Apify)
+  useEffect(() => {
+    fetch('/api/ingest/webhook')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+            const newItems: RadarJobItem[] = data.jobs.filter(
+              (j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
+            );
+            if (newItems.length === 0) return prev;
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isLive]);
+
   // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
