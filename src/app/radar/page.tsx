@@ -776,6 +776,7 @@ export default function MorningRadarPage() {
       if (
         (j.source === 'yc_startup' ||
           j.source === 'hacker_news' ||
+          j.source === 'hacker_news_jobs' ||
           j.source === 'venture_funding' ||
           j.source === 'headcount_labs' ||
           j.source === 'yubhub') &&
@@ -816,6 +817,7 @@ export default function MorningRadarPage() {
       if (
         (j.source === 'yc_startup' ||
           j.source === 'hacker_news' ||
+          j.source === 'hacker_news_jobs' ||
           j.source === 'venture_funding' ||
           j.source === 'headcount_labs' ||
           j.source === 'yubhub') &&
@@ -1565,7 +1567,7 @@ export default function MorningRadarPage() {
                           ? 'bg-sky-500/15 text-[#38BDF8] border-sky-500/30'
                           : job.source === 'naukri_alert' || job.source === 'naukri_webhook'
                           ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                          : job.source === 'hacker_news' || job.source === 'venture_funding'
+                          : job.source === 'hacker_news' || job.source === 'hacker_news_jobs' || job.source === 'venture_funding'
                           ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
                           : job.source === 'headcount_labs' || job.source === 'yubhub'
                           ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'

@@ -365,6 +365,7 @@ export function formatSourceLabel(source: string): string {
     bulk_upload: 'Bulk Upload',
     chrome_extension: 'Extension Clip',
     hacker_news: 'Hacker News',
+    hacker_news_jobs: 'HN Jobs Board',
     venture_funding: 'Fresh Funding',
     headcount_labs: 'Headcount Labs',
     yubhub: 'YubHub',
