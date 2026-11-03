@@ -391,6 +391,111 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     door1: { name: 'Daniel E.', title: 'CEO' },
     door2: { name: 'Gustav S.', title: 'VP Product' },
     door3: { name: 'Astrid L.', title: 'Talent Lead' }
+  },
+  {
+    id: 'job-26',
+    company: 'LangChain',
+    title: 'Staff Product Manager, Agents & Ecosystem',
+    fitScore: 93,
+    stage: 'DISCOVERED',
+    location: 'Remote (US/Global)',
+    workplace: 'remote',
+    salary: '$180,000 - $240,000 + Top Tier Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 20, // within 24h
+    door1: { name: 'Harrison C.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Ankush G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Erick F.', title: 'Founding PM' }
+  },
+  {
+    id: 'job-27',
+    company: 'PostHog',
+    title: 'Product Lead, Web & Product Analytics',
+    fitScore: 89,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$165,000 - $215,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 40, // 1.6 days ago
+    door1: { name: 'James H.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Tim G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Coua P.', title: 'People Lead' }
+  },
+  {
+    id: 'job-28',
+    company: 'Resend',
+    title: 'Lead Product Manager, Developer Platform',
+    fitScore: 91,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$175,000 - $230,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 60, // 2.5 days ago
+    door1: { name: 'Zeno R.', title: 'Founder & CEO' },
+    door2: { name: 'Bu K.', title: 'Founding Designer' },
+    door3: { name: 'Matheus A.', title: 'Head of Growth' }
+  },
+  {
+    id: 'job-29',
+    company: 'Modal Labs',
+    title: 'AI Infrastructure Product Lead',
+    fitScore: 92,
+    stage: 'DISCOVERED',
+    location: 'New York, NY / San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$195,000 - $260,000 + High Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 110, // 4.5 days ago
+    door1: { name: 'Erik B.', title: 'CEO & Co-Founder' },
+    door2: { name: 'Akshat B.', title: 'Co-Founder' },
+    door3: { name: 'Nate T.', title: 'Head of Talent' }
+  },
+  {
+    id: 'job-30',
+    company: 'Cognition (Devin)',
+    title: 'Product Lead, Autonomous Code Agents',
+    fitScore: 96,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'onsite',
+    salary: '$220,000 - $320,000 + Top Tier Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 160, // 6.6 days ago
+    door1: { name: 'Scott W.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Walden Y.', title: 'Co-Founder & Chief Product' },
+    door3: { name: 'Steven H.', title: 'Founding Member' }
+  },
+  {
+    id: 'job-31',
+    company: 'Vellum AI',
+    title: 'Founding PM, Enterprise Prompt & Evaluation Engine',
+    fitScore: 87,
+    stage: 'DISCOVERED',
+    location: 'Remote (US/EU)',
+    workplace: 'remote',
+    salary: '$160,000 - $210,000 + Meaningful Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 210, // 8.7 days ago
+    door1: { name: 'Akash S.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Noomi G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Siddharth T.', title: 'Co-Founder' }
+  },
+  {
+    id: 'job-32',
+    company: 'Perplexity',
+    title: 'Lead Search & Reasoning Product Manager',
+    fitScore: 94,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$210,000 - $285,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 280, // 11.6 days ago
+    door1: { name: 'Aravind S.', title: 'CEO & Co-Founder' },
+    door2: { name: 'Denis Y.', title: 'CTO & Co-Founder' },
+    door3: { name: 'Johnny H.', title: 'VP Product' }
   }
 ];
 
