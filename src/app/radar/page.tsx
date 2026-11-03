@@ -514,6 +514,7 @@ export default function MorningRadarPage() {
   const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [isSyncingGmail, setIsSyncingGmail] = useState<boolean>(false);
   const [isSyncingYc, setIsSyncingYc] = useState<boolean>(false);
+  const [ycJobs, setYcJobs] = useState<RadarJobItem[]>([]);
 
   // Quick Filters
   const [filterCategory, setFilterCategory] = useState<'all' | 'high_fit' | 'remote' | 'chosen'>('all');
@@ -545,7 +546,7 @@ export default function MorningRadarPage() {
       .catch(() => {});
   }, []);
 
-  // Compute unified job pool combining 15-day onboarding crawl jobs from enabled sources + live ingested jobs
+  // Compute unified job pool combining 15-day onboarding crawl jobs from enabled sources + live ingested jobs + YC roles
   useEffect(() => {
     if (!mounted) return;
 
@@ -556,9 +557,11 @@ export default function MorningRadarPage() {
       return enabledSourceIds.has(src);
     });
 
+    const isYcEnabled = !enabledSourceIds || enabledSourceIds.has('yc_startup');
+
     if (isLive) {
       // In Live Mode: merge live ingested jobs (Gmail alerts, Clipper, Bulk upload)
-      // with active 15-day discovery crawl jobs from enabled sources
+      // with active 15-day discovery crawl jobs from enabled sources and YC jobs
       const live = getLiveJobs<RadarJobItem>();
       const seen = new Set<string>();
       const merged: RadarJobItem[] = [];
@@ -569,6 +572,17 @@ export default function MorningRadarPage() {
         if (!seen.has(key)) {
           seen.add(key);
           merged.push(j);
+        }
+      }
+
+      // Merge autonomous YC roles if enabled
+      if (isYcEnabled) {
+        for (const j of ycJobs) {
+          const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(j);
+          }
         }
       }
 
@@ -583,9 +597,31 @@ export default function MorningRadarPage() {
 
       setJobs(merged);
     } else {
-      setJobs(activeCrawlJobs);
+      // In Demo Mode: merge active crawl jobs with YC roles
+      const seen = new Set<string>();
+      const merged: RadarJobItem[] = [];
+
+      if (isYcEnabled) {
+        for (const j of ycJobs) {
+          const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(j);
+          }
+        }
+      }
+
+      for (const j of activeCrawlJobs) {
+        const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(j);
+        }
+      }
+
+      setJobs(merged);
     }
-  }, [isLive, mounted, enabledSourceIds]);
+  }, [isLive, mounted, enabledSourceIds, ycJobs]);
 
   // On mount: fetch any existing backend Gmail alert jobs from store
   useEffect(() => {
@@ -657,18 +693,26 @@ export default function MorningRadarPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.jobs && data.jobs.length > 0) {
-          setJobs((prev) => {
-            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
-            const newItems: RadarJobItem[] = data.jobs.filter(
-              (j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
-            );
-            if (newItems.length === 0) return prev;
-            return [...newItems, ...prev];
-          });
+          const mapped: RadarJobItem[] = data.jobs.map((j: any) => ({
+            id: j.id,
+            company: j.company,
+            title: j.title,
+            fitScore: j.fitScore,
+            stage: 'DISCOVERED',
+            location: j.location,
+            workplace: j.workplace,
+            salary: j.salary,
+            source: 'yc_startup',
+            postedHoursAgo: j.postedHoursAgo || 6,
+            door1: j.door1,
+            door2: j.door2,
+            door3: j.door3,
+          }));
+          setYcJobs(mapped);
         }
       })
       .catch(() => {});
-  }, [isLive]);
+  }, []);
 
   // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
   useEffect(() => {
@@ -695,6 +739,7 @@ export default function MorningRadarPage() {
     // Current time window pool
     const inWindow = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (j.source === 'yc_startup' && timeWindow === '15_days') return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days = 360 hours
     });
@@ -708,6 +753,7 @@ export default function MorningRadarPage() {
       chosen: inWindow.filter((j) => j.stage === 'CHOSEN').length,
       within24h: jobs.filter((j) => j.postedHoursAgo <= 24 || j.id.startsWith('ingest-') || j.id.startsWith('bulk-')).length,
       within15d: jobs.length,
+      ycCount: jobs.filter((j) => j.source === 'yc_startup').length,
     };
   }, [jobs, timeWindow, statusTab]);
 
@@ -725,6 +771,7 @@ export default function MorningRadarPage() {
     // 1. Time Window Filter (15-Day Backfill vs 24h Daily Crawl)
     let list = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (j.source === 'yc_startup' && timeWindow === '15_days') return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days
     });
@@ -838,25 +885,27 @@ export default function MorningRadarPage() {
       const res = await fetch('/api/ingest/yc', { method: 'POST' });
       const data = await res.json();
       if (data.success && data.jobs && data.jobs.length > 0) {
+        const mappedYc: RadarJobItem[] = data.jobs.map((j: any) => ({
+          id: j.id,
+          company: j.company,
+          title: j.title,
+          fitScore: j.fitScore,
+          stage: 'DISCOVERED',
+          location: j.location,
+          workplace: j.workplace,
+          salary: j.salary,
+          source: 'yc_startup',
+          postedHoursAgo: j.postedHoursAgo || 6,
+          door1: j.door1,
+          door2: j.door2,
+          door3: j.door3,
+        }));
+        setYcJobs(mappedYc);
         setJobs((prev) => {
           const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
-          const newItems: RadarJobItem[] = data.jobs
-            .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
-            .map((j: any) => ({
-              id: j.id,
-              company: j.company,
-              title: j.title,
-              fitScore: j.fitScore,
-              stage: 'DISCOVERED',
-              location: j.location,
-              workplace: j.workplace,
-              salary: j.salary,
-              source: 'yc_startup',
-              postedHoursAgo: j.postedHoursAgo || 6,
-              door1: j.door1,
-              door2: j.door2,
-              door3: j.door3,
-            }));
+          const newItems = mappedYc.filter(
+            (j) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
+          );
           const updated = [...newItems, ...prev];
           if (isLive) {
             const liveOnly = updated.filter(

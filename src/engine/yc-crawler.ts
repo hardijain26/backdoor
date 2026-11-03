@@ -4,6 +4,8 @@
  * Ingests and scores 200+ YC Product roles with 3-Door outreach leads.
  */
 
+import fs from 'fs';
+import path from 'path';
 import { evaluateJobSuitability } from '@/engine/scorer';
 import { WebhookJobItem, addWebhookIngestedJob } from '@/engine/webhook-ingest';
 
@@ -96,6 +98,44 @@ function parseExperienceYears(exp?: string): number {
 }
 
 /**
+ * Loads YC raw dataset from network mirror with automatic local offline snapshot fallback
+ */
+async function loadYcRawData(): Promise<{ companies: YcRawCompany[]; jobsData: { updated?: number; bySlug?: Record<string, YcRawJob[]> } }> {
+  try {
+    const [companiesRes, jobsRes] = await Promise.all([
+      fetch('https://ycme.dev/data/companies.json', { next: { revalidate: 600 } }),
+      fetch('https://ycme.dev/data/jobs.json', { next: { revalidate: 600 } })
+    ]);
+
+    if (companiesRes.ok && jobsRes.ok) {
+      const [companies, jobsData] = await Promise.all([
+        companiesRes.json() as Promise<YcRawCompany[]>,
+        jobsRes.json() as Promise<{ updated?: number; bySlug?: Record<string, YcRawJob[]> }>
+      ]);
+      return { companies, jobsData };
+    }
+  } catch (err) {
+    console.warn('[YcStartupCrawler] Network fetch failed, falling back to local dataset snapshot');
+  }
+
+  // Fallback to local snapshot in src/data/
+  try {
+    const companiesPath = path.join(process.cwd(), 'src/data/yc-companies.json');
+    const jobsPath = path.join(process.cwd(), 'src/data/yc-jobs.json');
+
+    if (fs.existsSync(companiesPath) && fs.existsSync(jobsPath)) {
+      const companies = JSON.parse(fs.readFileSync(companiesPath, 'utf-8'));
+      const jobsData = JSON.parse(fs.readFileSync(jobsPath, 'utf-8'));
+      return { companies, jobsData };
+    }
+  } catch (fsErr) {
+    console.error('[YcStartupCrawler] Local snapshot read failed:', fsErr);
+  }
+
+  throw new Error('Unable to retrieve YC Startup data from either network or local snapshot.');
+}
+
+/**
  * Fetches and scores all active YC Product Management jobs
  */
 export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): Promise<WebhookJobItem[]> {
@@ -105,19 +145,7 @@ export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): 
   }
 
   try {
-    const [companiesRes, jobsRes] = await Promise.all([
-      fetch('https://ycme.dev/data/companies.json', { next: { revalidate: 600 } }),
-      fetch('https://ycme.dev/data/jobs.json', { next: { revalidate: 600 } })
-    ]);
-
-    if (!companiesRes.ok || !jobsRes.ok) {
-      throw new Error(`Failed to fetch YC mirror data: companies=${companiesRes.status}, jobs=${jobsRes.status}`);
-    }
-
-    const [companies, jobsData] = await Promise.all([
-      companiesRes.json() as Promise<YcRawCompany[]>,
-      jobsRes.json() as Promise<{ updated?: number; bySlug?: Record<string, YcRawJob[]> }>
-    ]);
+    const { companies, jobsData } = await loadYcRawData();
 
     // Build company lookup map
     const compMap = new Map<string, YcRawCompany>();
