@@ -9,6 +9,7 @@ import { ImportModal } from '@/components/ingest/ImportModal';
 import { formatSourceLabel } from '@/engine/gmail-ingest';
 import { useDataMode, DataModeToggle } from '@/components/DataModeToggle';
 import { getLiveJobs, saveLiveJobs } from '@/engine/data-mode';
+import { benchmarkSalary } from '@/engine/salary-benchmark';
 
 export interface RadarJobItem {
   id: string;
@@ -391,6 +392,111 @@ const INITIAL_RADAR_JOBS: RadarJobItem[] = [
     door1: { name: 'Daniel E.', title: 'CEO' },
     door2: { name: 'Gustav S.', title: 'VP Product' },
     door3: { name: 'Astrid L.', title: 'Talent Lead' }
+  },
+  {
+    id: 'job-26',
+    company: 'LangChain',
+    title: 'Staff Product Manager, Agents & Ecosystem',
+    fitScore: 93,
+    stage: 'DISCOVERED',
+    location: 'Remote (US/Global)',
+    workplace: 'remote',
+    salary: '$180,000 - $240,000 + Top Tier Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 20, // within 24h
+    door1: { name: 'Harrison C.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Ankush G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Erick F.', title: 'Founding PM' }
+  },
+  {
+    id: 'job-27',
+    company: 'PostHog',
+    title: 'Product Lead, Web & Product Analytics',
+    fitScore: 89,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$165,000 - $215,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 40, // 1.6 days ago
+    door1: { name: 'James H.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Tim G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Coua P.', title: 'People Lead' }
+  },
+  {
+    id: 'job-28',
+    company: 'Resend',
+    title: 'Lead Product Manager, Developer Platform',
+    fitScore: 91,
+    stage: 'DISCOVERED',
+    location: 'Remote (Global)',
+    workplace: 'remote',
+    salary: '$175,000 - $230,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 60, // 2.5 days ago
+    door1: { name: 'Zeno R.', title: 'Founder & CEO' },
+    door2: { name: 'Bu K.', title: 'Founding Designer' },
+    door3: { name: 'Matheus A.', title: 'Head of Growth' }
+  },
+  {
+    id: 'job-29',
+    company: 'Modal Labs',
+    title: 'AI Infrastructure Product Lead',
+    fitScore: 92,
+    stage: 'DISCOVERED',
+    location: 'New York, NY / San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$195,000 - $260,000 + High Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 110, // 4.5 days ago
+    door1: { name: 'Erik B.', title: 'CEO & Co-Founder' },
+    door2: { name: 'Akshat B.', title: 'Co-Founder' },
+    door3: { name: 'Nate T.', title: 'Head of Talent' }
+  },
+  {
+    id: 'job-30',
+    company: 'Cognition (Devin)',
+    title: 'Product Lead, Autonomous Code Agents',
+    fitScore: 96,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'onsite',
+    salary: '$220,000 - $320,000 + Top Tier Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 160, // 6.6 days ago
+    door1: { name: 'Scott W.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Walden Y.', title: 'Co-Founder & Chief Product' },
+    door3: { name: 'Steven H.', title: 'Founding Member' }
+  },
+  {
+    id: 'job-31',
+    company: 'Vellum AI',
+    title: 'Founding PM, Enterprise Prompt & Evaluation Engine',
+    fitScore: 87,
+    stage: 'DISCOVERED',
+    location: 'Remote (US/EU)',
+    workplace: 'remote',
+    salary: '$160,000 - $210,000 + Meaningful Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 210, // 8.7 days ago
+    door1: { name: 'Akash S.', title: 'Co-Founder & CEO' },
+    door2: { name: 'Noomi G.', title: 'Co-Founder & CTO' },
+    door3: { name: 'Siddharth T.', title: 'Co-Founder' }
+  },
+  {
+    id: 'job-32',
+    company: 'Perplexity',
+    title: 'Lead Search & Reasoning Product Manager',
+    fitScore: 94,
+    stage: 'DISCOVERED',
+    location: 'San Francisco, CA',
+    workplace: 'hybrid',
+    salary: '$210,000 - $285,000 + Equity',
+    source: 'yc_startup',
+    postedHoursAgo: 280, // 11.6 days ago
+    door1: { name: 'Aravind S.', title: 'CEO & Co-Founder' },
+    door2: { name: 'Denis Y.', title: 'CTO & Co-Founder' },
+    door3: { name: 'Johnny H.', title: 'VP Product' }
   }
 ];
 
@@ -408,6 +514,8 @@ export default function MorningRadarPage() {
   // Dual-View Source Filter (S6-T09)
   const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [isSyncingGmail, setIsSyncingGmail] = useState<boolean>(false);
+  const [isSyncingYc, setIsSyncingYc] = useState<boolean>(false);
+  const [ycJobs, setYcJobs] = useState<RadarJobItem[]>([]);
 
   // Quick Filters
   const [filterCategory, setFilterCategory] = useState<'all' | 'high_fit' | 'remote' | 'chosen'>('all');
@@ -439,7 +547,7 @@ export default function MorningRadarPage() {
       .catch(() => {});
   }, []);
 
-  // Compute unified job pool combining 15-day onboarding crawl jobs from enabled sources + live ingested jobs
+  // Compute unified job pool combining 15-day onboarding crawl jobs from enabled sources + live ingested jobs + YC roles
   useEffect(() => {
     if (!mounted) return;
 
@@ -450,9 +558,11 @@ export default function MorningRadarPage() {
       return enabledSourceIds.has(src);
     });
 
+    const isYcEnabled = !enabledSourceIds || enabledSourceIds.has('yc_startup');
+
     if (isLive) {
       // In Live Mode: merge live ingested jobs (Gmail alerts, Clipper, Bulk upload)
-      // with active 15-day discovery crawl jobs from enabled sources
+      // with active 15-day discovery crawl jobs from enabled sources and YC jobs
       const live = getLiveJobs<RadarJobItem>();
       const seen = new Set<string>();
       const merged: RadarJobItem[] = [];
@@ -463,6 +573,17 @@ export default function MorningRadarPage() {
         if (!seen.has(key)) {
           seen.add(key);
           merged.push(j);
+        }
+      }
+
+      // Merge autonomous YC roles if enabled
+      if (isYcEnabled) {
+        for (const j of ycJobs) {
+          const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(j);
+          }
         }
       }
 
@@ -477,9 +598,31 @@ export default function MorningRadarPage() {
 
       setJobs(merged);
     } else {
-      setJobs(activeCrawlJobs);
+      // In Demo Mode: merge active crawl jobs with YC roles
+      const seen = new Set<string>();
+      const merged: RadarJobItem[] = [];
+
+      if (isYcEnabled) {
+        for (const j of ycJobs) {
+          const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(j);
+          }
+        }
+      }
+
+      for (const j of activeCrawlJobs) {
+        const key = `${j.company.toLowerCase()}:${j.title.toLowerCase()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(j);
+        }
+      }
+
+      setJobs(merged);
     }
-  }, [isLive, mounted, enabledSourceIds]);
+  }, [isLive, mounted, enabledSourceIds, ycJobs]);
 
   // On mount: fetch any existing backend Gmail alert jobs from store
   useEffect(() => {
@@ -526,6 +669,85 @@ export default function MorningRadarPage() {
       .catch(() => {});
   }, [isLive]);
 
+  // On mount: fetch any existing backend webhook jobs from store (Browse.ai, Apify)
+  useEffect(() => {
+    fetch('/api/ingest/webhook')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+            const newItems: RadarJobItem[] = data.jobs.filter(
+              (j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
+            );
+            if (newItems.length === 0) return prev;
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, [isLive]);
+
+  // On mount: fetch autonomous YC Startup roles from crawler cache
+  useEffect(() => {
+    fetch('/api/ingest/yc')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          const mapped: RadarJobItem[] = data.jobs.map((j: any) => ({
+            id: j.id,
+            company: j.company,
+            title: j.title,
+            fitScore: j.fitScore,
+            stage: 'DISCOVERED',
+            location: j.location,
+            workplace: j.workplace,
+            salary: j.salary,
+            source: 'yc_startup',
+            postedHoursAgo: j.postedHoursAgo || 6,
+            door1: j.door1,
+            door2: j.door2,
+            door3: j.door3,
+          }));
+          setYcJobs(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // On mount: fetch Hacker News, Venture Funding, Headcount Labs & YubHub roles
+  useEffect(() => {
+    fetch('/api/ingest/funding')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+            const newItems: RadarJobItem[] = data.jobs
+              .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
+              .map((j: any) => ({
+                id: j.id,
+                company: j.company,
+                title: j.title,
+                fitScore: j.fitScore,
+                stage: 'DISCOVERED',
+                location: j.location,
+                workplace: j.workplace,
+                salary: j.salary,
+                source: j.source,
+                postedHoursAgo: j.postedHoursAgo || 12,
+                door1: j.door1,
+                door2: j.door2,
+                door3: j.door3,
+              }));
+            if (newItems.length === 0) return prev;
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -551,6 +773,15 @@ export default function MorningRadarPage() {
     // Current time window pool
     const inWindow = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (
+        (j.source === 'yc_startup' ||
+          j.source === 'hacker_news' ||
+          j.source === 'venture_funding' ||
+          j.source === 'headcount_labs' ||
+          j.source === 'yubhub') &&
+        timeWindow === '15_days'
+      )
+        return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days = 360 hours
     });
@@ -564,6 +795,7 @@ export default function MorningRadarPage() {
       chosen: inWindow.filter((j) => j.stage === 'CHOSEN').length,
       within24h: jobs.filter((j) => j.postedHoursAgo <= 24 || j.id.startsWith('ingest-') || j.id.startsWith('bulk-')).length,
       within15d: jobs.length,
+      ycCount: jobs.filter((j) => j.source === 'yc_startup').length,
     };
   }, [jobs, timeWindow, statusTab]);
 
@@ -581,6 +813,15 @@ export default function MorningRadarPage() {
     // 1. Time Window Filter (15-Day Backfill vs 24h Daily Crawl)
     let list = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
+      if (
+        (j.source === 'yc_startup' ||
+          j.source === 'hacker_news' ||
+          j.source === 'venture_funding' ||
+          j.source === 'headcount_labs' ||
+          j.source === 'yubhub') &&
+        timeWindow === '15_days'
+      )
+        return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days
     });
@@ -685,6 +926,64 @@ export default function MorningRadarPage() {
       console.error('Failed to sync gmail alerts:', err);
     } finally {
       setIsSyncingGmail(false);
+    }
+  };
+
+  const handleSyncYcStartups = async () => {
+    setIsSyncingYc(true);
+    try {
+      const res = await fetch('/api/ingest/yc', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.jobs && data.jobs.length > 0) {
+        const mappedYc: RadarJobItem[] = data.jobs.map((j: any) => ({
+          id: j.id,
+          company: j.company,
+          title: j.title,
+          fitScore: j.fitScore,
+          stage: 'DISCOVERED',
+          location: j.location,
+          workplace: j.workplace,
+          salary: j.salary,
+          source: 'yc_startup',
+          postedHoursAgo: j.postedHoursAgo || 6,
+          door1: j.door1,
+          door2: j.door2,
+          door3: j.door3,
+        }));
+        setYcJobs(mappedYc);
+        setJobs((prev) => {
+          const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+          const newItems = mappedYc.filter(
+            (j) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`)
+          );
+          const updated = [...newItems, ...prev];
+          if (isLive) {
+            const liveOnly = updated.filter(
+              (j) =>
+                j.id.startsWith('gmail-') ||
+                j.id.startsWith('ingest-') ||
+                j.id.startsWith('bulk-') ||
+                j.id.startsWith('yc-') ||
+                j.source === 'yc_startup' ||
+                j.source === 'linkedin_alert' ||
+                j.source === 'naukri_alert'
+            );
+            saveLiveJobs(liveOnly);
+          }
+          return updated;
+        });
+        setBulkToast(`⚡ Autonomous agent ingested ${data.count} live YC Product roles!`);
+        setTimeout(() => setBulkToast(null), 4000);
+      } else {
+        setBulkToast('YC mirror checked: all roles already synced & deduplicated.');
+        setTimeout(() => setBulkToast(null), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to sync YC roles:', err);
+      setBulkToast('Failed to sync YC roles. Please verify network connectivity.');
+      setTimeout(() => setBulkToast(null), 4000);
+    } finally {
+      setIsSyncingYc(false);
     }
   };
 
@@ -910,6 +1209,23 @@ export default function MorningRadarPage() {
               </>
             ) : (
               <span>⚡ Sync Gmail</span>
+            )}
+          </button>
+
+          {/* Autonomous YC Startup Sync Trigger (Free Native Agent) */}
+          <button
+            onClick={handleSyncYcStartups}
+            disabled={isSyncingYc}
+            className="px-3 py-1.5 rounded-md text-xs font-semibold bg-[#0F1523] hover:bg-[#161F33] text-[#8da693] border border-[#8da693]/40 shadow-sm flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Autonomous Free Agent: Sync 200+ YC Product Manager roles directly from Work at a Startup"
+          >
+            {isSyncingYc ? (
+              <>
+                <div className="w-3 h-3 border-2 border-[#8da693] border-t-transparent rounded-full animate-spin" />
+                <span>Syncing YC...</span>
+              </>
+            ) : (
+              <span>⚡ Sync YC Startups</span>
             )}
           </button>
 
@@ -1235,6 +1551,9 @@ export default function MorningRadarPage() {
                     >
                       {job.salary || '$165,000 - $210,000 + Equity'}
                     </span>
+                    <span className="inline-block mt-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      {benchmarkSalary(job.salary || '$165,000 - $210,000', job.title).badgeLabel}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
@@ -1246,6 +1565,10 @@ export default function MorningRadarPage() {
                           ? 'bg-sky-500/15 text-[#38BDF8] border-sky-500/30'
                           : job.source === 'naukri_alert' || job.source === 'naukri_webhook'
                           ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : job.source === 'hacker_news' || job.source === 'venture_funding'
+                          ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
+                          : job.source === 'headcount_labs' || job.source === 'yubhub'
+                          ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
                           : job.source.includes('greenhouse') || job.source.includes('lever') || job.source.includes('ashby')
                           ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
                           : 'bg-white/5 text-slate-300 border-white/10'
@@ -1395,7 +1718,15 @@ export default function MorningRadarPage() {
                       </div>
                     </td>
                     <td className="py-2 px-3 text-[#F8FAFC]">
-                      {job.title}
+                      <div className="font-medium">{job.title}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[11px] text-emerald-400 font-mono">
+                          {job.salary || '$165k-$210k'}
+                        </span>
+                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+                          {benchmarkSalary(job.salary || '$165,000', job.title).percentile}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-2 px-3 text-xs text-[#94A3B8]">
                       {job.location}

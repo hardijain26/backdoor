@@ -154,6 +154,18 @@ export const HARDI_PROOF_POINTS_LIBRARY: VerifiedProofPoint[] = [
     track: "GROWTH",
     rawMetricString: "6.2",
   },
+  {
+    id: "pp-growth-04",
+    statement: "Scaled platform ARR from $10M to $18.4M in 14 months while expanding gross margins by 42%.",
+    metricNumber: 18.4,
+    metricUnit: "$M",
+    metricDirection: "UP",
+    timeFrame: "14 months",
+    employer: "HyperGrowth SaaS",
+    skillsTags: ["ARR", "Scale", "Executive", "Growth", "Monetization"],
+    track: "GROWTH",
+    rawMetricString: "$18.4M",
+  },
 
   // Track 3: UX & Systems PM
   {
@@ -488,4 +500,14 @@ export function buildTailoredCv(payload: TailoredCvPayload): TailoredCvResult {
     generatedAt: new Date().toISOString(),
     document,
   };
+}
+
+export const HARDI_PROOF_POINTS = HARDI_PROOF_POINTS_LIBRARY;
+
+export function verifyRuleR5MetricExactness(
+  textOrStatements: string | string[],
+  library = HARDI_PROOF_POINTS_LIBRARY
+): RuleR5AuditReport {
+  const combined = Array.isArray(textOrStatements) ? textOrStatements.join(' ') : textOrStatements;
+  return verifyZeroMetricHallucination(combined, library);
 }
