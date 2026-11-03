@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { safeFetchHtml, extractJobMetadataFromHtml, extractJobFromRawText, IngestedJobMetadata } from '@/engine/safe-fetch';
-import { generateDedupMatchKey } from '@/engine/dedup';
-import { evaluateJobSuitability } from '@/engine/scorer';
 import { isSafeUrl } from '@/engine/scraper';
+import { ingestSingleJob } from '@/engine/ingestion-service';
 
-// In-memory catalog store for demo / mock deduplication checks across sessions
-const KNOWN_DEDUP_KEYS = new Set<string>([
-  'stripe:staff_ai_product_manager',
-  'linear:product_lead_insights_and_workflows',
-  'openai:product_manager_applied_research',
-  'figma:senior_product_manager_systems',
-  'vercel:senior_pm_developer_experience'
-]);
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -122,44 +114,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid ingestion mode.' }, { status: 400 });
     }
 
-    // Generate Canonical Dedup Key (UT-DB-04)
-    const dedupMatchKey = generateDedupMatchKey(metadata.company, metadata.title);
-    const isDuplicate = KNOWN_DEDUP_KEYS.has(dedupMatchKey);
-
-    // Record new key into registry
-    if (!isDuplicate) {
-      KNOWN_DEDUP_KEYS.add(dedupMatchKey);
-    }
-
-    // Run Tier 1 Eligibility Gate & Tier 2 Deterministic Scoring
-    const evalInput = {
+    // Process through the unified role-agnostic ingestion pipeline
+    const { isDuplicate, job: createdJob } = ingestSingleJob({
       title: metadata.title,
       company: metadata.company,
-      locations: [metadata.location],
-      descriptionText: metadata.description
-    };
-    const evalResult = evaluateJobSuitability(evalInput);
-    const fitScore = evalResult.fitScore;
-
-    const createdJob = {
-      id: `ingest-${Date.now()}`,
-      company: metadata.company,
-      title: metadata.title,
-      fitScore,
-      stage: 'DISCOVERED',
       location: metadata.location,
-      workplace: metadata.location.toLowerCase().includes('remote') ? ('remote' as const) : ('hybrid' as const),
-      source: metadata.source,
-      postedHoursAgo: 0,
       salary: metadata.salary,
       description: metadata.description,
-      sourceUrl: metadata.applyUrl,
-      door1: { name: 'Alex H.', title: 'VP of Product', confidence: 92 },
-      door2: { name: 'Taylor S.', title: 'Lead Talent Partner', confidence: 88 },
-      door3: { name: 'Jordan M.', title: 'Senior PM', confidence: 84 },
-      dedupMatchKey,
-      track: track || 'Senior / Staff PM'
-    };
+      applyUrl: metadata.applyUrl,
+      source: metadata.source,
+      track: track || undefined,
+    });
+
+    const fitScore = createdJob.fitScore;
+    const dedupMatchKey = createdJob.dedupMatchKey;
 
     return NextResponse.json({
       success: true,

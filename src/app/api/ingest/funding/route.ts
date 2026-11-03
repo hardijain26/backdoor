@@ -9,10 +9,13 @@ export const dynamic = 'force-dynamic';
  * GET /api/ingest/funding
  * Returns live/cached roles from Hacker News, Venture Funding tracker, Headcount Labs & YubHub.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const targetRole = searchParams.get('role') || undefined;
+
     const [ventureHnJobs, directFeedJobs] = await Promise.all([
-      fetchVentureHnJobs(),
+      fetchVentureHnJobs(targetRole),
       fetchDirectFeedJobs()
     ]);
 
@@ -40,10 +43,22 @@ export async function GET() {
  * Triggers live sync of Hacker News, TechCrunch/Crunchbase funding rounds, Headcount Labs & YubHub,
  * staging all items directly into Backdoor's active job store.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    let targetRole: string | undefined;
+    try {
+      const body = await req.json();
+      targetRole = body?.role;
+    } catch {
+      // Body is optional
+    }
+    const { searchParams } = new URL(req.url);
+    if (!targetRole) {
+      targetRole = searchParams.get('role') || undefined;
+    }
+
     const [ventureHnJobs, directFeedJobs] = await Promise.all([
-      fetchVentureHnJobs(),
+      fetchVentureHnJobs(targetRole),
       fetchDirectFeedJobs()
     ]);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stageGmailDraft, RuleR8SafetyCapExceededError, StagedDraftPayload } from '@/engine/cadence';
 import { addStagedCadence } from '@/engine/cadence-lifecycle';
+import { generateFunctionalDoors } from '@/engine/ingestion-service';
 
 /**
  * POST /api/cadence/stage
@@ -18,10 +19,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const roleTitle = body.title || 'Senior Practitioner';
     const payload: StagedDraftPayload = {
       jobId: body.jobId,
       company: body.company,
-      title: body.title || 'Product Manager',
+      title: roleTitle,
       door: body.door || 'door1',
       contactEmail: body.contactEmail,
       contactName: body.contactName,
@@ -31,6 +33,7 @@ export async function POST(request: NextRequest) {
     };
 
     const staged = stageGmailDraft(payload);
+    const doors = generateFunctionalDoors(payload.company, roleTitle);
 
     // Register active campaign into Module 7 Cadence Board
     addStagedCadence({
@@ -42,10 +45,10 @@ export async function POST(request: NextRequest) {
       contactName: payload.contactName,
       contactTitle:
         payload.door === 'door1'
-          ? 'VP of Product'
+          ? doors.door1.title
           : payload.door === 'door2'
-          ? 'Lead Recruiter'
-          : 'Staff PM',
+          ? doors.door2.title
+          : doors.door3.title,
       contactEmail: payload.contactEmail,
       door: payload.door,
       channel: 'GMAIL',

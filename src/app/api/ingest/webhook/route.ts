@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { evaluateJobSuitability } from '@/engine/scorer';
 import {
   WebhookJobItem,
   getWebhookIngestedJobs,
-  addWebhookIngestedJob
 } from '@/engine/webhook-ingest';
+import { ingestBatchJobs, RawJobInput } from '@/engine/ingestion-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -109,12 +108,7 @@ export async function POST(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sourceParam = searchParams.get('source') || body.source || 'yc_startup';
 
-    const ingested: WebhookJobItem[] = [];
-
-    for (let i = 0; i < rawItems.length; i++) {
-      const item = rawItems[i];
-
-      // Flexible key extraction across Browse.ai, Apify, and custom fields
+    const rawJobInputs: RawJobInput[] = rawItems.map((item, i) => {
       const title =
         item.title ||
         item.jobTitle ||
@@ -122,7 +116,7 @@ export async function POST(req: NextRequest) {
         item['job_title'] ||
         item.role ||
         item.position ||
-        'Product Manager';
+        'Senior Practitioner';
 
       const company =
         item.company ||
@@ -140,7 +134,7 @@ export async function POST(req: NextRequest) {
         item['Job URL'] ||
         item['job_url'] ||
         item['Link'] ||
-        `https://www.workatastartup.com/companies?role=product`;
+        'https://backdoor.app';
 
       const location =
         item.location ||
@@ -153,66 +147,33 @@ export async function POST(req: NextRequest) {
         item.salary ||
         item['Salary'] ||
         item.compensation ||
-        item['Compensation'] ||
-        '$160,000 - $220,000 + Equity';
+        item['Compensation'];
 
       const description =
         item.description ||
         item['Description'] ||
-        item.snippet ||
-        `${title} at ${company}. Lead core product vision, user workflows, roadmaps, and cross-functional execution.`;
+        item.snippet;
 
-      let normLocation = location;
-      if (
-        /san francisco|new york|seattle|austin|chicago|boston|los angeles|california|\bca\b|\bny\b|\btx\b|\bwa\b/i.test(
-          location
-        ) &&
-        !/us\b|usa\b|united states/i.test(location)
-      ) {
-        normLocation = `${location} (US)`;
-      }
-
-      // Evaluate suitability score
-      const evalResult = evaluateJobSuitability({
+      return {
+        externalId: `webhook-${Date.now()}-${i}`,
         title,
         company,
-        locations: [normLocation],
-        descriptionText: description
-      });
-
-      const workplaceType = location.toLowerCase().includes('remote')
-        ? ('remote' as const)
-        : location.toLowerCase().includes('hybrid')
-        ? ('hybrid' as const)
-        : ('onsite' as const);
-
-      const job: WebhookJobItem = {
-        id: `webhook-${Date.now()}-${i}`,
-        company,
-        title,
-        fitScore: evalResult.fitScore,
-        stage: 'DISCOVERED',
+        applyUrl,
         location,
-        workplace: workplaceType,
         salary,
+        description,
         source: sourceParam,
-        postedHoursAgo: 1,
-        door1: { name: 'Founder & CEO', title: `${company} Executive` },
-        door2: { name: 'Talent Acquisition', title: 'Hiring Lead' },
-        door3: { name: 'Lead Product Manager', title: 'Product Team' },
-        applyUrl
       };
+    });
 
-      ingested.push(job);
-      addWebhookIngestedJob(job);
-    }
+    const batchResult = ingestBatchJobs(rawJobInputs);
 
     return NextResponse.json({
       success: true,
-      count: ingested.length,
+      count: batchResult.jobs.length,
       source: sourceParam,
-      message: `Successfully ingested ${ingested.length} roles from ${sourceParam} webhook.`,
-      jobs: ingested
+      message: `Successfully ingested ${batchResult.jobs.length} roles from ${sourceParam} webhook.`,
+      jobs: batchResult.jobs
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

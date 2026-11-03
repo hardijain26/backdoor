@@ -82,10 +82,13 @@ export function evaluateTier1(
   const companyLower = (job.company || '').toLowerCase();
   const titleLower = (job.title || '').toLowerCase();
 
-  // 1. Title Exclusions
-  const BANNED_TITLE_REGEX = /(marketing|engineering manager|tpm|scrum master|technical program manager|recruiter)/i;
-  if (BANNED_TITLE_REGEX.test(titleLower)) {
-    return { passed: false, reason: `Role title "${job.title}" matches excluded functional roles.` };
+  // 1. Title Exclusions (Non-practitioner or explicitly excluded roles)
+  const isTargetTrackTitle = track.targetTitles.some((t) => titleLower.includes(t.toLowerCase()));
+  if (!isTargetTrackTitle) {
+    const BANNED_TITLE_REGEX = /(marketing|engineering manager|tpm|scrum master|technical program manager|recruiter)/i;
+    if (BANNED_TITLE_REGEX.test(titleLower)) {
+      return { passed: false, reason: `Role title "${job.title}" matches excluded functional roles.` };
+    }
   }
 
   // 2. Excluded Industries Check (Zero FinTech / Payments invariant)
@@ -178,7 +181,11 @@ export function evaluateTier2(
 
   if (isExactLevel) {
     seniorityScore = 15;
-  } else if (titleLower.includes('product manager') || titleLower.includes('pm')) {
+  } else if (
+    track.targetTitles.some((t) => titleLower.includes(t.toLowerCase())) ||
+    titleLower.includes('product manager') ||
+    titleLower.includes('pm')
+  ) {
     seniorityScore = 10;
   }
 

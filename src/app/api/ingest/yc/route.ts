@@ -12,8 +12,9 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const force = searchParams.get('force') === 'true';
+    const roleCategory = searchParams.get('category') || searchParams.get('role') || undefined;
 
-    const jobs = await fetchYcStartupJobs({ forceRefresh: force });
+    const jobs = await fetchYcStartupJobs({ forceRefresh: force, roleCategory });
 
     return NextResponse.json({
       success: true,
@@ -40,7 +41,15 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const jobs = await fetchYcStartupJobs({ forceRefresh: true });
+    let roleCategory: string | undefined;
+    try {
+      const body = await req.json();
+      roleCategory = body?.category || body?.role;
+    } catch {
+      // Body is optional
+    }
+
+    const jobs = await fetchYcStartupJobs({ forceRefresh: true, roleCategory });
 
     // Stage into persistent webhook store so Morning Radar displays them
     for (const job of jobs) {

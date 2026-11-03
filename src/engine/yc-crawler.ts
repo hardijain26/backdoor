@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { evaluateJobSuitability } from '@/engine/scorer';
 import { WebhookJobItem, addWebhookIngestedJob } from '@/engine/webhook-ingest';
+import { generateFunctionalDoors } from '@/engine/ingestion-service';
 
 export interface YcRawCompany {
   s: string; // slug e.g. "circuithub"
@@ -138,7 +139,11 @@ async function loadYcRawData(): Promise<{ companies: YcRawCompany[]; jobsData: {
 /**
  * Fetches and scores all active YC Product Management jobs
  */
-export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): Promise<WebhookJobItem[]> {
+export async function fetchYcStartupJobs(options?: {
+  forceRefresh?: boolean;
+  roleCategory?: string;
+  targetRoles?: string[];
+}): Promise<WebhookJobItem[]> {
   const now = Date.now();
   if (!options?.forceRefresh && cachedJobs.length > 0 && now - lastFetchTimestamp < CACHE_TTL_MS) {
     return cachedJobs;
@@ -168,25 +173,36 @@ export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): 
         const title = (j.t || '').trim();
         const titleLower = title.toLowerCase();
 
-        // Target Product Management and leadership positions
-        const isProductRole =
-          role === 'product' ||
-          titleLower.includes('product manager') ||
-          titleLower.includes('head of product') ||
-          titleLower.includes('product lead') ||
-          titleLower.includes('director of product') ||
-          titleLower.includes('vp of product') ||
-          titleLower.includes('vp product');
+        // Dynamically match against target roles or category if provided, else default to product
+        let matchesTarget = false;
+        if (options?.targetRoles && options.targetRoles.length > 0) {
+          matchesTarget = options.targetRoles.some((t) => titleLower.includes(t.toLowerCase()));
+        } else if (options?.roleCategory) {
+          const cat = options.roleCategory.toLowerCase();
+          matchesTarget = role === cat || titleLower.includes(cat);
+        } else {
+          // Default: Target Product Management and leadership positions
+          matchesTarget =
+            role === 'product' ||
+            titleLower.includes('product manager') ||
+            titleLower.includes('head of product') ||
+            titleLower.includes('product lead') ||
+            titleLower.includes('director of product') ||
+            titleLower.includes('vp of product') ||
+            titleLower.includes('vp product');
 
-        // Exclude engineering managers, TPMs, recruiting, marketing
-        const isExcluded =
-          titleLower.includes('engineering manager') ||
-          titleLower.includes('tpm') ||
-          titleLower.includes('scrum') ||
-          titleLower.includes('recruiter') ||
-          titleLower.includes('marketing manager');
+          // Exclude engineering managers, TPMs, recruiting, marketing when in default product mode
+          const isExcluded =
+            titleLower.includes('engineering manager') ||
+            titleLower.includes('tpm') ||
+            titleLower.includes('scrum') ||
+            titleLower.includes('recruiter') ||
+            titleLower.includes('marketing manager');
 
-        if (!isProductRole || isExcluded) {
+          if (isExcluded) matchesTarget = false;
+        }
+
+        if (!matchesTarget) {
           continue;
         }
 
@@ -222,6 +238,8 @@ export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): 
           ? j.u
           : `https://www.workatastartup.com${j.u}`;
 
+        const functionalDoors = generateFunctionalDoors(companyName, title);
+
         const jobItem: WebhookJobItem = {
           id: jobId,
           company: companyName,
@@ -238,12 +256,12 @@ export async function fetchYcStartupJobs(options?: { forceRefresh?: boolean }): 
             title: `Co-Founder & CEO (${batchTag})`
           },
           door2: {
-            name: 'Head of Talent',
-            title: 'Founding Talent Lead'
+            name: functionalDoors.door2.name,
+            title: functionalDoors.door2.title
           },
           door3: {
-            name: 'Lead PM / Peer',
-            title: 'Senior Product Manager'
+            name: functionalDoors.door3.name,
+            title: functionalDoors.door3.title
           },
           applyUrl
         };

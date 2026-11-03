@@ -31,3 +31,4 @@ test('UT-GUARD-03: Leaves standard legitimate job descriptions intact', () => {
   assert.strictEqual(result.injectionsDetected.length, 0);
   assert.strictEqual(result.cleanedText, cleanInput);
 });
+

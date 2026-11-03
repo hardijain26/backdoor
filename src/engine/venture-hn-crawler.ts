@@ -7,6 +7,7 @@
 
 import { WebhookJobItem } from '@/engine/webhook-ingest';
 import { evaluateJobSuitability } from '@/engine/scorer';
+import { generateFunctionalDoors } from '@/engine/ingestion-service';
 
 export const SEED_VENTURE_HN_JOBS: WebhookJobItem[] = [
   // --- Hacker News ("Who is Hiring" November 2026) ---
@@ -113,8 +114,9 @@ export const SEED_VENTURE_HN_JOBS: WebhookJobItem[] = [
 /**
  * Ingests live opportunities from Hacker News and TechCrunch/Crunchbase funding streams
  */
-export async function fetchVentureHnJobs(): Promise<WebhookJobItem[]> {
+export async function fetchVentureHnJobs(targetRole?: string): Promise<WebhookJobItem[]> {
   const jobs: WebhookJobItem[] = [...SEED_VENTURE_HN_JOBS];
+  const queryTerm = targetRole ? encodeURIComponent(targetRole) : 'hiring';
 
   try {
     // Attempt live fetch from Hacker News Algolia API if network accessible
@@ -128,7 +130,7 @@ export async function fetchVentureHnJobs(): Promise<WebhookJobItem[]> {
       if (data.hits && data.hits.length > 0) {
         const latestStory = data.hits[0];
         const commentsRes = await fetch(
-          `https://hn.algolia.com/api/v1/search?tags=comment,story_${latestStory.objectID}&query=product&hitsPerPage=10`,
+          `https://hn.algolia.com/api/v1/search?tags=comment,story_${latestStory.objectID}&query=${queryTerm}&hitsPerPage=15`,
           { next: { revalidate: 3600 } }
         );
 
@@ -141,29 +143,28 @@ export async function fetchVentureHnJobs(): Promise<WebhookJobItem[]> {
               const headerLine = lines[0];
               const parts = headerLine.split('|').map((p: string) => p.trim());
               const company = parts[0] || 'Tech Venture';
-              const title = parts[1] || 'Product Manager';
+              const title = parts[1] || targetRole || 'Senior Practitioner';
 
-              if (title.toLowerCase().includes('product') || title.toLowerCase().includes('pm')) {
-                const isRemote = rawText.toLowerCase().includes('remote');
-                const loc = parts[2] || (isRemote ? 'Remote (Global)' : 'San Francisco, CA');
+              const isRemote = rawText.toLowerCase().includes('remote');
+              const loc = parts[2] || (isRemote ? 'Remote (Global)' : 'San Francisco, CA');
+              const functionalDoors = generateFunctionalDoors(company, title);
 
-                jobs.push({
-                  id: `hn-${c.objectID}`,
-                  company,
-                  title,
-                  fitScore: 88,
-                  stage: 'DISCOVERED',
-                  location: loc,
-                  workplace: isRemote ? 'remote' : 'hybrid',
-                  salary: '$160,000 - $220,000 + Equity',
-                  source: 'hacker_news',
-                  postedHoursAgo: 8,
-                  door1: { name: `${company} Founder`, title: 'Co-Founder & CEO' },
-                  door2: { name: 'Talent Acquisition', title: 'Hiring Lead' },
-                  door3: { name: 'Peer PM', title: 'Product Manager' },
-                  applyUrl: `https://news.ycombinator.com/item?id=${c.objectID}`
-                });
-              }
+              jobs.push({
+                id: `hn-${c.objectID}`,
+                company,
+                title,
+                fitScore: 88,
+                stage: 'DISCOVERED',
+                location: loc,
+                workplace: isRemote ? 'remote' : 'hybrid',
+                salary: '$170,000 - $240,000 + Equity',
+                source: 'hacker_news',
+                postedHoursAgo: 8,
+                door1: functionalDoors.door1,
+                door2: functionalDoors.door2,
+                door3: functionalDoors.door3,
+                applyUrl: `https://news.ycombinator.com/item?id=${c.objectID}`
+              });
             }
           }
         }

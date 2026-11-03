@@ -75,3 +75,4 @@ export function sanitizeUntrustedPosting(rawText: string): GuardSanitizationResu
     strippedCharactersCount,
   };
 }
+

@@ -50,3 +50,4 @@ test('UT-INTEL-04: Deterministic fallback for unlisted companies creates valid r
   assert.ok(intel.conversationHooks.productHook.includes('Acme Aerospace Robotics'));
   assert.ok(intel.sources.website?.url.includes('acme-aerospace-robotics.com'));
 });
+
