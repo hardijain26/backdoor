@@ -364,6 +364,10 @@ export function formatSourceLabel(source: string): string {
     apollo_jobs: 'Apollo Jobs (BYOK)',
     bulk_upload: 'Bulk Upload',
     chrome_extension: 'Extension Clip',
+    hacker_news: 'Hacker News',
+    venture_funding: 'Fresh Funding',
+    headcount_labs: 'Headcount Labs',
+    yubhub: 'YubHub',
   };
 
   return map[s] || (source ? source.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Feed');

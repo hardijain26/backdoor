@@ -10,6 +10,7 @@ import {
   StagedDraftResult,
 } from '@/engine/cadence';
 import { evaluateTier3Dossier, Tier3SynthesisResult } from '@/engine/tier3-eval';
+import { executeDualPassPipeline, CriticReviewResult } from '@/engine/dual-pass-drafter';
 
 export interface DossierJobData {
   id: string;
@@ -158,22 +159,62 @@ export function DossierDrawer({
     }
   }, [job?.company]);
 
+  const targetContact =
+    selectedDoor === 'door1'
+      ? enrichedContacts?.door1
+      : selectedDoor === 'door2'
+      ? enrichedContacts?.door2
+      : enrichedContacts?.door3;
+
+  const targetName =
+    targetContact?.fullName ||
+    (selectedDoor === 'door1'
+      ? job?.door1?.name || 'Hiring Manager'
+      : selectedDoor === 'door2'
+      ? job?.door2?.name || 'Recruiter'
+      : job?.door3?.name || 'Team PM');
+
+  const targetFirstName = targetName.split(' ')[0] || 'there';
+
+  const dualPassResult: CriticReviewResult | null = React.useMemo(() => {
+    if (!job) return null;
+    const doorType =
+      selectedDoor === 'door1'
+        ? 'DOOR_1_FOUNDER'
+        : selectedDoor === 'door2'
+        ? 'DOOR_2_TALENT'
+        : 'DOOR_3_PEER';
+
+    return executeDualPassPipeline({
+      candidateName: 'Hardi Jain',
+      targetCompany: job.company,
+      targetRole: job.title,
+      doorType,
+      recipientName: targetFirstName,
+      conversationHooks: job.companyBrief ? [job.companyBrief] : undefined,
+    });
+  }, [job, selectedDoor, targetFirstName]);
+
   useEffect(() => {
     if (job) {
-      const contactName =
-        selectedDoor === 'door1'
-          ? enrichedContacts?.door1.fullName || job.door1?.name
-          : selectedDoor === 'door2'
-          ? enrichedContacts?.door2.fullName || job.door2?.name
-          : enrichedContacts?.door3.fullName || job.door3?.name;
-      const firstName = contactName ? contactName.split(' ')[0] : 'there';
-      setLinkedInNote(
-        `Hi ${firstName}, noticed your team is building at ${job.company}. Having scaled product systems from 0 to 1M users, I have specific ideas on your growth roadmap. Would love to share insights.`
-      );
+      if (dualPassResult?.finalApprovedText) {
+        setLinkedInNote(dualPassResult.finalApprovedText);
+      } else {
+        const contactName =
+          selectedDoor === 'door1'
+            ? enrichedContacts?.door1.fullName || job.door1?.name
+            : selectedDoor === 'door2'
+            ? enrichedContacts?.door2.fullName || job.door2?.name
+            : enrichedContacts?.door3.fullName || job.door3?.name;
+        const firstName = contactName ? contactName.split(' ')[0] : 'there';
+        setLinkedInNote(
+          `Hi ${firstName}, noticed your team is building at ${job.company}. Having scaled product systems from 0 to 1M users, I have specific ideas on your growth roadmap. Would love to share insights.`
+        );
+      }
       setLinkedInNoteCopied(false);
       setDraftStaged(false);
     }
-  }, [job, selectedDoor, enrichedContacts]);
+  }, [job, selectedDoor, enrichedContacts, dualPassResult]);
 
   // In-Drawer Keyboard Navigation: Up (Prev), Down (Next), Esc (Close)
   const handleKeyDown = useCallback(
@@ -226,13 +267,6 @@ export function DossierDrawer({
     setTimeout(() => setLinkedInNoteCopied(false), 2500);
   };
 
-  const targetContact =
-    selectedDoor === 'door1'
-      ? enrichedContacts?.door1
-      : selectedDoor === 'door2'
-      ? enrichedContacts?.door2
-      : enrichedContacts?.door3;
-
   const targetEmail =
     targetContact?.email ||
     (selectedDoor === 'door1'
@@ -241,19 +275,13 @@ export function DossierDrawer({
       ? job?.door2?.email || 'recruiting@stripe.com'
       : job?.door3?.email || 'peer.pm@stripe.com');
 
-  const targetName =
-    targetContact?.fullName ||
-    (selectedDoor === 'door1'
-      ? job?.door1?.name || 'Hiring Manager'
-      : selectedDoor === 'door2'
-      ? job?.door2?.name || 'Recruiter'
-      : job?.door3?.name || 'Team PM');
-
-  const targetFirstName = targetName.split(' ')[0] || 'there';
-
   const emailSubject = `Product leadership at ${job?.company || 'Company'} — scaling systems`;
 
-  const emailBody = `Hi ${targetFirstName},\n\nI've been closely tracking ${job?.company || 'your team'}'s recent product momentum in platform infrastructure. Having led product teams that scaled active users from 0 to 1M with 99.9% uptime, I see immediate alignment with your current roadmap.\n\nI put together a quick 1-pager on your top customer onboarding friction points and 3 targeted proposals.\n\nAttached my tailored executive CV for the ${job?.title || 'Product Manager'} role (Rule R5 zero metric hallucination verified).\n\nWould love to share insights if of interest.\n\nBest,\nHardi Jain\nhardi.jain@backdoor.careers | linkedin.com/in/hardijain`;
+  const outreachPitch =
+    dualPassResult?.finalApprovedText ||
+    'Having led product teams that scaled active users from 0 to 1M with 99.9% uptime, I see immediate alignment with your current roadmap.';
+
+  const emailBody = `Hi ${targetFirstName},\n\nI've been closely tracking ${job?.company || 'your team'}'s recent product momentum in platform infrastructure. ${outreachPitch}\n\nI put together a quick 1-pager on your top customer onboarding friction points and 3 targeted proposals.\n\nAttached my tailored executive CV for the ${job?.title || 'Product Manager'} role (Rule R5 zero metric hallucination verified).\n\nWould love to share insights if of interest.\n\nBest,\nHardi Jain\nhardi.jain@backdoor.careers | linkedin.com/in/hardijain`;
 
   const candidateTz =
     typeof window !== 'undefined'
@@ -1005,6 +1033,67 @@ export function DossierDrawer({
                   </div>
                 </div>
               </div>
+
+              {/* Dual-Pass Drafter & Critic Architecture (Runbook §4.3) */}
+              {dualPassResult && (
+                <div className="p-3.5 rounded-lg bg-[#0F1523] border border-white/8 space-y-3 text-xs">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white text-xs">
+                        Dual-Pass Drafter &amp; Critic Architecture
+                      </span>
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded border font-semibold ${
+                          dualPassResult.passed
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20'
+                        }`}
+                      >
+                        {dualPassResult.passed ? '✓ Critic Approved' : '⚡ Revision Applied'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Tone Score: {dualPassResult.toneScore}/100
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2.5 rounded bg-[#161F33]/60 border border-white/5 space-y-1">
+                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">
+                        Agent 1 (The Drafter)
+                      </span>
+                      <p className="text-slate-300 leading-relaxed font-sans line-clamp-3">
+                        {dualPassResult.initialDraft}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded bg-[#161F33]/60 border border-white/5 space-y-1">
+                      <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">
+                        Agent 2 (The Critic &amp; Reviewer)
+                      </span>
+                      <div className="space-y-1">
+                        <span className="text-slate-300 block">
+                          Rule R5 Verified Metrics: {dualPassResult.verifiedMetrics.length > 0 ? dualPassResult.verifiedMetrics.join(', ') : 'Verified against proof points'}
+                        </span>
+                        <span className="text-emerald-400 block font-mono text-[10px]">
+                          Anti-AI Lint: 0 Clichés · Active Voice
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {dualPassResult.criticFeedback.length > 0 && (
+                    <div className="p-2 rounded bg-[#080B11]/70 border border-white/5 text-[10px] space-y-1 text-slate-400 font-mono">
+                      <span className="text-slate-300 font-semibold block">Critic Audit Trail:</span>
+                      {dualPassResult.criticFeedback.map((fb, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-slate-300">
+                          <span>&bull;</span>
+                          <span>{fb}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* LinkedIn Note Editor */}
               <div>

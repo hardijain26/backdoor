@@ -9,6 +9,7 @@ import { ImportModal } from '@/components/ingest/ImportModal';
 import { formatSourceLabel } from '@/engine/gmail-ingest';
 import { useDataMode, DataModeToggle } from '@/components/DataModeToggle';
 import { getLiveJobs, saveLiveJobs } from '@/engine/data-mode';
+import { benchmarkSalary } from '@/engine/salary-benchmark';
 
 export interface RadarJobItem {
   id: string;
@@ -714,6 +715,39 @@ export default function MorningRadarPage() {
       .catch(() => {});
   }, []);
 
+  // On mount: fetch Hacker News, Venture Funding, Headcount Labs & YubHub roles
+  useEffect(() => {
+    fetch('/api/ingest/funding')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.jobs && data.jobs.length > 0) {
+          setJobs((prev) => {
+            const existingKeys = new Set(prev.map((j) => `${j.company.toLowerCase()}:${j.title.toLowerCase()}`));
+            const newItems: RadarJobItem[] = data.jobs
+              .filter((j: any) => !existingKeys.has(`${j.company.toLowerCase()}:${j.title.toLowerCase()}`))
+              .map((j: any) => ({
+                id: j.id,
+                company: j.company,
+                title: j.title,
+                fitScore: j.fitScore,
+                stage: 'DISCOVERED',
+                location: j.location,
+                workplace: j.workplace,
+                salary: j.salary,
+                source: j.source,
+                postedHoursAgo: j.postedHoursAgo || 12,
+                door1: j.door1,
+                door2: j.door2,
+                door3: j.door3,
+              }));
+            if (newItems.length === 0) return prev;
+            return [...newItems, ...prev];
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Global Shift + I listener for Universal Ingest Modal (Runbook §4.4)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -739,7 +773,15 @@ export default function MorningRadarPage() {
     // Current time window pool
     const inWindow = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
-      if (j.source === 'yc_startup' && timeWindow === '15_days') return true;
+      if (
+        (j.source === 'yc_startup' ||
+          j.source === 'hacker_news' ||
+          j.source === 'venture_funding' ||
+          j.source === 'headcount_labs' ||
+          j.source === 'yubhub') &&
+        timeWindow === '15_days'
+      )
+        return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days = 360 hours
     });
@@ -771,7 +813,15 @@ export default function MorningRadarPage() {
     // 1. Time Window Filter (15-Day Backfill vs 24h Daily Crawl)
     let list = jobs.filter((j) => {
       if (j.id.startsWith('ingest-') || j.id.startsWith('bulk-')) return true;
-      if (j.source === 'yc_startup' && timeWindow === '15_days') return true;
+      if (
+        (j.source === 'yc_startup' ||
+          j.source === 'hacker_news' ||
+          j.source === 'venture_funding' ||
+          j.source === 'headcount_labs' ||
+          j.source === 'yubhub') &&
+        timeWindow === '15_days'
+      )
+        return true;
       if (timeWindow === '24_hours') return j.postedHoursAgo <= 24;
       return j.postedHoursAgo <= 360; // 15 days
     });
@@ -1501,6 +1551,9 @@ export default function MorningRadarPage() {
                     >
                       {job.salary || '$165,000 - $210,000 + Equity'}
                     </span>
+                    <span className="inline-block mt-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      {benchmarkSalary(job.salary || '$165,000 - $210,000', job.title).badgeLabel}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[9px] uppercase font-mono tracking-wider mb-0.5">
@@ -1512,6 +1565,10 @@ export default function MorningRadarPage() {
                           ? 'bg-sky-500/15 text-[#38BDF8] border-sky-500/30'
                           : job.source === 'naukri_alert' || job.source === 'naukri_webhook'
                           ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                          : job.source === 'hacker_news' || job.source === 'venture_funding'
+                          ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
+                          : job.source === 'headcount_labs' || job.source === 'yubhub'
+                          ? 'bg-teal-500/15 text-teal-300 border-teal-500/30'
                           : job.source.includes('greenhouse') || job.source.includes('lever') || job.source.includes('ashby')
                           ? 'bg-[#2563EB]/15 text-[#38BDF8] border-[#2563EB]/30'
                           : 'bg-white/5 text-slate-300 border-white/10'
@@ -1661,7 +1718,15 @@ export default function MorningRadarPage() {
                       </div>
                     </td>
                     <td className="py-2 px-3 text-[#F8FAFC]">
-                      {job.title}
+                      <div className="font-medium">{job.title}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[11px] text-emerald-400 font-mono">
+                          {job.salary || '$165k-$210k'}
+                        </span>
+                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+                          {benchmarkSalary(job.salary || '$165,000', job.title).percentile}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-2 px-3 text-xs text-[#94A3B8]">
                       {job.location}
